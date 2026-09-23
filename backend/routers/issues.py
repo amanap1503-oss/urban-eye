@@ -68,10 +68,65 @@ async def get_all_issues(city: Optional[str] = None, db: AsyncSession = Depends(
             "yoloDetections": i.yolo_detections or [],
             "siteArrivalProof": i.site_arrival_proof,
             "resolutionProof": i.resolution_proof,
+            "voiceRecordingUrl": i.voice_recording_url,
             "createdAt": i.created_at.isoformat() if i.created_at else datetime.utcnow().isoformat(),
             "reportedAt": i.created_at.isoformat() if i.created_at else datetime.utcnow().isoformat()
         })
     return output
+
+@router.get("/{issue_id}/ai-report")
+async def get_issue_ai_report(issue_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DBIssue).where(DBIssue.id == issue_id))
+    issue = result.scalar_one_or_none()
+    if not issue:
+        res = await db.execute(select(DBIssue))
+        all_issues = res.scalars().all()
+        issue = next((i for i in all_issues if i.id.lower() == issue_id.lower()), None)
+        if not issue:
+            raise HTTPException(status_code=404, detail=f"Issue {issue_id} not found")
+
+    full_report = issue.ai_full_report
+    if not full_report:
+        yolo_summary = ""
+        if issue.yolo_detections:
+            dets = [f"{d.get('class', 'object')} ({float(d.get('confidence', 0))*100:.0f}%)" for d in issue.yolo_detections if isinstance(d, dict)]
+            if dets:
+                yolo_summary = f"Computer Vision (YOLOv8) detected: {', '.join(dets)}. "
+        
+        full_report = (
+            f"INSPECTION REPORT FOR ISSUE #{issue.id}:\n\n"
+            f"Citizen Complaint Summary: '{issue.title}' - {issue.description}\n"
+            f"Location: '{issue.location}, {issue.city or 'Mumbai'}' | Category: {issue.category}\n\n"
+            f"{yolo_summary}"
+            f"AI Severity Score is rated at {issue.ai_score or 50}/100 with a Citizen Impact Score of {issue.citizen_impact_score or 50}/100. "
+            f"Risk Assessment: {issue.ai_risk_assessment or 'Moderate civic hazard requiring standard municipal resolution.'}\n"
+            f"Recommended Action: {issue.recommended_action or 'Dispatch maintenance crew to site within standard SLA timeframe.'}\n"
+            f"Expected resolution SLA window is {issue.sla_hours or 24} hours."
+        )
+
+    return {
+        "issue_id": issue.id,
+        "title": issue.title,
+        "description": issue.description,
+        "category": issue.category,
+        "location": issue.location,
+        "image_url": issue.image_url,
+        "status": issue.status,
+        "priority": issue.priority or "medium",
+        "ai_score": issue.ai_score or 50,
+        "citizen_impact_score": issue.citizen_impact_score or 50,
+        "suggested_category": issue.category,
+        "summary": issue.ai_summary or f"{issue.title}: {issue.description[:120]}...",
+        "risk_assessment": issue.ai_risk_assessment or "Standard civic issue.",
+        "recommended_action": issue.recommended_action or "Dispatch municipal squad.",
+        "suggested_sla_hours": issue.sla_hours or 24,
+        "full_report": full_report,
+        "yolo_detections": issue.yolo_detections or [],
+        "ai_annotated_image_url": issue.ai_annotated_image_url or issue.image_url,
+        "voice_recording_url": issue.voice_recording_url,
+        "image_analyzed": bool(issue.image_url),
+        "yolo_ran": bool(issue.yolo_detections)
+    }
 
 @router.post("")
 async def create_issue(
@@ -84,6 +139,7 @@ async def create_issue(
     city: str = Form("Mumbai"),
     reporter_id: str = Form(""),
     reporter_name: str = Form("Anonymous Citizen"),
+    voice_recording: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
@@ -138,6 +194,7 @@ async def create_issue(
         lng=lng,
         city=city,
         image_url=image_url,
+        voice_recording_url=voice_recording,
         reporter_id=reporter_id,
         reporter_name=reporter_name,
         votes=1,
@@ -214,6 +271,7 @@ async def create_issue(
         "citizenImpactScore": new_issue.citizen_impact_score,
         "recommendedAction": new_issue.recommended_action,
         "yoloDetections": new_issue.yolo_detections or [],
+        "voiceRecordingUrl": new_issue.voice_recording_url,
         "createdAt": new_issue.created_at.isoformat()
     }
 
@@ -224,6 +282,17 @@ async def create_issue(
     })
 
     return formatted_issue
+@router.delete("")
+async def delete_all_issues(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import delete
+    await db.execute(delete(DBIssue))
+    await db.commit()
+
+    await ws_manager.broadcast({
+        "type": "all_issues_deleted"
+    })
+
+    return {"success": True, "message": "All issues have been cleared"}
 
 @router.delete("/{issue_id}")
 async def delete_issue(issue_id: str, db: AsyncSession = Depends(get_db)):

@@ -225,6 +225,20 @@ export default function EmployeePortal() {
                     </div>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}>{issue.title}</h3>
                     <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", margin: "4px 0 0" }}>{issue.description}</p>
+                    {issue.voiceRecordingUrl && (
+                      <div style={{
+                        marginTop: 8,
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        background: "rgba(16,185,129,0.08)",
+                        border: "1px solid rgba(52,211,153,0.25)",
+                      }}>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: "#34d399", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                          <span>🎙️ Citizen Voice Recording Note</span>
+                        </div>
+                        <audio controls src={issue.voiceRecordingUrl} style={{ width: "100%", height: 32, outline: "none", borderRadius: 6 }} />
+                      </div>
+                    )}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>
                       <MapPin size={12} className="text-emerald-400" />
                       {issue.location} ({issue.city || "Mumbai"})

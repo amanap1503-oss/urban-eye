@@ -1112,6 +1112,22 @@ export default function AdminPortal() {
                               </div>
                             )}
 
+                            {/* Citizen Voice Note Audio Player */}
+                            {issue.voiceRecordingUrl && (
+                              <div style={{
+                                marginBottom: 10,
+                                padding: "8px 10px",
+                                borderRadius: 8,
+                                background: "rgba(16,185,129,0.08)",
+                                border: "1px solid rgba(52,211,153,0.25)",
+                              }}>
+                                <div style={{ fontSize: 10, fontWeight: 600, color: "#34d399", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <span>🎙️ Citizen Voice Recording</span>
+                                </div>
+                                <audio controls src={issue.voiceRecordingUrl} style={{ width: "100%", height: 32, outline: "none", borderRadius: 6 }} />
+                              </div>
+                            )}
+
                             {/* No AI data yet */}
                             {!issue.aiSummary && (
                               <div style={{

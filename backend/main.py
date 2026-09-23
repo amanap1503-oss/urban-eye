@@ -32,81 +32,8 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS ai_annotated_image_url VARCHAR;"))
         await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS site_arrival_proof JSON;"))
         await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS resolution_proof JSON;"))
+        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS voice_recording_url TEXT;"))
     print("[PostgreSQL] Tables & columns verified.")
-
-    # Pre-seed initial sample data if empty
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(DBIssue))
-        existing_issues = result.scalars().all()
-        if not existing_issues:
-            print("[Database Seed] Seeding initial Mumbai/Delhi/Bengaluru issues...")
-            initial_data = [
-                {
-                    "id": "iss-init-1",
-                    "title": "Deep Pothole near Andheri Station West",
-                    "description": "Hazardous 3-foot wide crater on main road causing severe traffic backup and risk to bikers.",
-                    "category": "Infrastructure",
-                    "priority": "critical",
-                    "status": "In Progress",
-                    "location": "S.V. Road, Andheri West",
-                    "city": "Mumbai",
-                    "image_url": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&auto=format&fit=crop",
-                    "reporter_name": "Arun Sharma",
-                    "votes": 28,
-                    "sla_hours": 12,
-                    "assigned_team": "Pothole Quick Response Unit",
-                    "assigned_officers": ["Inspector Rajesh Kumar", "Officer Suresh Patil"],
-                    "ai_score": 88,
-                    "ai_summary": "High risk infrastructure defect located on primary arterial route. Immediate road repair required.",
-                    "ai_risk_assessment": "CRITICAL HAZARD: Bikers at risk of severe accidents during night hours.",
-                    "citizen_impact_score": 92,
-                    "recommended_action": "Deploy asphalt compaction squad within 12 hours."
-                },
-                {
-                    "id": "iss-init-2",
-                    "title": "Water Pipeline Breach & Street Flooding",
-                    "description": "Clean drinking water bursting out from underground pipe near Worli Sea Link junction.",
-                    "category": "Utilities",
-                    "priority": "high",
-                    "status": "Reported",
-                    "location": "Worli Naka, Ward G-South",
-                    "city": "Mumbai",
-                    "image_url": "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=600&auto=format&fit=crop",
-                    "reporter_name": "Priya Deshmukh",
-                    "votes": 42,
-                    "sla_hours": 8,
-                    "ai_score": 79,
-                    "ai_summary": "Major municipal water loss detected. High volume flow risking local foundation erosion.",
-                    "ai_risk_assessment": "HIGH RISK: Utility wastage and roadway sub-base softening.",
-                    "citizen_impact_score": 85,
-                    "recommended_action": "Isolate pipeline valve and dispatch Hydraulic Engineer team."
-                },
-                {
-                    "id": "iss-init-3",
-                    "title": "Broken Streetlights in Connaught Place Outer Ring",
-                    "description": "Block C streetlights flicking and completely dark after 8 PM, safety hazard for pedestrians.",
-                    "category": "Safety",
-                    "priority": "high",
-                    "status": "Reported",
-                    "location": "Connaught Place Block C",
-                    "city": "Delhi",
-                    "image_url": "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600&auto=format&fit=crop",
-                    "reporter_name": "Rohan Gupta",
-                    "votes": 19,
-                    "sla_hours": 24,
-                    "ai_score": 72,
-                    "ai_summary": "Illumination loss in high-footfall commercial corridor. Increased night-time vulnerability.",
-                    "ai_risk_assessment": "HIGH SAFETY RISK: Inadequate visibility for women and late commuters.",
-                    "citizen_impact_score": 78,
-                    "recommended_action": "Replace blown transformer module and LED bulbs."
-                }
-            ]
-
-            for item in initial_data:
-                iss = DBIssue(**item)
-                db.add(iss)
-            await db.commit()
-            print("[Database Seed] Seed completed.")
 
     yield
     print("[Shutdown] Closing server...")
@@ -118,14 +45,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS configuration for Vite frontend
-cors_env = os.getenv("CORS_ORIGINS", "*")
-allowed_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] if cors_env != "*" else ["*"]
+# CORS configuration for Vite frontend & Vercel
+cors_env = os.getenv("CORS_ORIGINS", "")
+allowed_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] if cors_env else [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True if allowed_origins != ["*"] else False,
+    allow_origins=allowed_origins if allowed_origins else ["*"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

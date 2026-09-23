@@ -33,6 +33,7 @@ class DBIssue(Base):
     lng = Column(Float, nullable=True)
     city = Column(String, default="Mumbai")
     image_url = Column(String, nullable=True)
+    voice_recording_url = Column(Text, nullable=True)
     reporter_id = Column(String, nullable=True)
     reporter_name = Column(String, default="Anonymous Citizen")
     votes = Column(Integer, default=1)

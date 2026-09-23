@@ -9,31 +9,32 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Issue, IssueCategory, IssuePriority } from "../data/mockData";
+import VoiceRecorder from "../components/VoiceRecorder";
 
 declare const L: any;
 
 const STEPS = [
-  { id: 1, title: "Issue Details", icon: FileText },
-  { id: 2, title: "Location", icon: MapPin },
-  { id: 3, title: "Photos", icon: Camera },
-  { id: 4, title: "Preview", icon: Eye },
-  { id: 5, title: "Submit", icon: Send },
+  { id: 1, key: "step_1", defaultTitle: "Issue Details", icon: FileText },
+  { id: 2, key: "step_2", defaultTitle: "Location", icon: MapPin },
+  { id: 3, key: "step_3", defaultTitle: "Photos", icon: Camera },
+  { id: 4, key: "step_4", defaultTitle: "Preview", icon: Eye },
+  { id: 5, key: "step_5", defaultTitle: "Submit", icon: Send },
 ];
 
-const CATEGORIES: { value: IssueCategory; label: string; icon: typeof Building2; color: string }[] = [
-  { value: "Infrastructure", label: "Infrastructure", icon: Building2, color: "#3b82f6" },
-  { value: "Safety", label: "Safety", icon: AlertTriangle, color: "#ef4444" },
-  { value: "Environment", label: "Environment", icon: Trees, color: "#10b981" },
-  { value: "Utilities", label: "Utilities", icon: Droplets, color: "#f59e0b" },
-  { value: "Traffic", label: "Traffic", icon: Car, color: "#8b5cf6" },
-  { value: "Public Spaces", label: "Public Spaces", icon: PlayCircle, color: "#06b6d4" },
+const CATEGORIES: { value: IssueCategory; key: string; defaultLabel: string; icon: typeof Building2; color: string }[] = [
+  { value: "Infrastructure", key: "cat_infrastructure", defaultLabel: "Infrastructure", icon: Building2, color: "#3b82f6" },
+  { value: "Safety", key: "cat_safety", defaultLabel: "Safety", icon: AlertTriangle, color: "#ef4444" },
+  { value: "Environment", key: "cat_environment", defaultLabel: "Environment", icon: Trees, color: "#10b981" },
+  { value: "Utilities", key: "cat_utilities", defaultLabel: "Utilities", icon: Droplets, color: "#f59e0b" },
+  { value: "Traffic", key: "cat_traffic", defaultLabel: "Traffic", icon: Car, color: "#8b5cf6" },
+  { value: "Public Spaces", key: "cat_public_spaces", defaultLabel: "Public Spaces", icon: PlayCircle, color: "#06b6d4" },
 ];
 
-const PRIORITIES: { value: IssuePriority; label: string; desc: string; color: string }[] = [
-  { value: "low", label: "Low", desc: "Minor inconvenience", color: "#64748b" },
-  { value: "medium", label: "Medium", desc: "Affects some residents", color: "#f59e0b" },
-  { value: "high", label: "High", desc: "Significant impact", color: "#f97316" },
-  { value: "critical", label: "Critical", desc: "Immediate danger", color: "#ef4444" },
+const PRIORITIES: { value: IssuePriority; key: string; descKey: string; defaultLabel: string; defaultDesc: string; color: string }[] = [
+  { value: "low", key: "prio_low", descKey: "prio_low_desc", defaultLabel: "Low", defaultDesc: "Minor inconvenience", color: "#64748b" },
+  { value: "medium", key: "prio_medium", descKey: "prio_medium_desc", defaultLabel: "Medium", defaultDesc: "Affects some residents", color: "#f59e0b" },
+  { value: "high", key: "prio_high", descKey: "prio_high_desc", defaultLabel: "High", defaultDesc: "Significant impact", color: "#f97316" },
+  { value: "critical", key: "prio_critical", descKey: "prio_critical_desc", defaultLabel: "Critical", defaultDesc: "Immediate danger", color: "#ef4444" },
 ];
 
 // Reads an uploaded photo, downscales it on a canvas, and resolves with a
@@ -310,8 +311,11 @@ function LocationPicker({ onSelect }: {
 export default function ReportIssue() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
-  const { addIssue, user } = useApp();
+  const { addIssue, user, language, t } = useApp();
   const navigate = useNavigate();
+
+  const [voiceAudio, setVoiceAudio] = useState<string | null>(null);
+  const voiceBaselineRef = useRef<string>("");
 
   const [form, setForm] = useState({
     title: "", description: "", category: "" as IssueCategory | "",
@@ -355,6 +359,7 @@ export default function ReportIssue() {
         reportedBy: user?.uid || "anonymous",
         reportedAt: new Date().toISOString().split("T")[0],
         image: uploadedImage || form.image,
+        voiceRecordingUrl: voiceAudio || undefined,
         tags: [form.category as string, form.priority],
       };
       await addIssue(newIssue, selectedFile);
@@ -400,8 +405,8 @@ export default function ReportIssue() {
     <div className="min-h-screen bg-[#050816] text-white pt-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Report a Civic Issue</h1>
-          <p className="text-slate-400 mt-2 text-sm">Help improve your city — earn <span className="text-yellow-400 font-semibold">+50 points</span> per report</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("report_page_title")}</h1>
+          <p className="text-slate-400 mt-2 text-sm">{t("report_page_subtitle")}</p>
         </motion.div>
 
         {/* Progress */}
@@ -419,7 +424,7 @@ export default function ReportIssue() {
                   "bg-white/5 border border-white/10 text-slate-500"}`}>
                   {step > s.id ? <CheckCircle2 size={14} /> : <s.icon size={14} />}
                 </div>
-                <span className={`text-[10px] font-medium hidden sm:block ${step === s.id ? "text-blue-300" : "text-slate-500"}`}>{s.title}</span>
+                <span className={`text-[10px] font-medium hidden sm:block ${step === s.id ? "text-blue-300" : "text-slate-500"}`}>{t(s.key)}</span>
               </div>
             ))}
           </div>
@@ -431,15 +436,15 @@ export default function ReportIssue() {
           {/* Step 1 — Issue Details */}
           {step === 1 && (
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold">Describe the Issue</h2>
+              <h2 className="text-lg font-semibold">{t("step_1")}</h2>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Title *</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t("issue_title_label")} *</label>
                 <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g., Large pothole blocking traffic on MG Road"
+                  placeholder={t("issue_title_placeholder")}
                   className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500/50 transition-all" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Category *</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">{t("category_label")} *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {CATEGORIES.map(cat => (
                     <button key={cat.value} onClick={() => setForm(f => ({ ...f, category: cat.value }))}
@@ -448,31 +453,45 @@ export default function ReportIssue() {
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cat.color + "20" }}>
                         <cat.icon size={13} style={{ color: cat.color }} />
                       </div>
-                      <span className="text-xs">{cat.label}</span>
+                      <span className="text-xs">{t(cat.key)}</span>
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Priority *</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">{t("priority_label")} *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PRIORITIES.map(p => (
                     <button key={p.value} onClick={() => setForm(f => ({ ...f, priority: p.value }))}
                       className="px-3 py-3 rounded-xl border text-center transition-all"
                       style={form.priority === p.value ? { borderColor: p.color + "80", backgroundColor: p.color + "15" } : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.03)" }}>
-                      <div className="text-sm font-semibold" style={form.priority === p.value ? { color: p.color } : { color: "#94a3b8" }}>{p.label}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{p.desc}</div>
+                      <div className="text-sm font-semibold" style={form.priority === p.value ? { color: p.color } : { color: "#94a3b8" }}>{t(p.key)}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{t(p.descKey)}</div>
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Description *</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t("description_label")} *</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Describe the issue in detail — size, duration, impact on residents..."
+                  placeholder={t("description_placeholder")}
                   rows={4} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500/50 transition-all resize-none" />
                 <div className="flex justify-end mt-1"><span className="text-xs text-slate-500">{form.description.length}/500</span></div>
               </div>
+
+              {/* Optional Voice Recording & Speech-to-Text */}
+              <VoiceRecorder
+                language={language}
+                onStartRecording={() => {
+                  voiceBaselineRef.current = form.description;
+                }}
+                onTranscript={(transcribedText) => {
+                  const base = voiceBaselineRef.current.trim();
+                  const updated = base ? `${base}\n${transcribedText}` : transcribedText;
+                  setForm(f => ({ ...f, description: updated }));
+                }}
+                onAudioRecorded={(audioBase64) => setVoiceAudio(audioBase64)}
+              />
             </div>
           )}
 
@@ -549,18 +568,18 @@ export default function ReportIssue() {
         <div className="flex items-center justify-between">
           <button onClick={() => setStep(s => s - 1)} disabled={step === 1}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-            <ChevronLeft size={16} /> Back
+            <ChevronLeft size={16} /> {t("btn_back")}
           </button>
-          <span className="text-xs text-slate-500 font-medium">Step {step} of {STEPS.length}</span>
+          <span className="text-xs text-slate-500 font-medium">{t("step_1").split(" ")[0]} {step} / {STEPS.length}</span>
           {step < STEPS.length ? (
             <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-[0_0_16px_rgba(59,130,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
-              Continue <ChevronRight size={16} />
+              {t("btn_next")} <ChevronRight size={16} />
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={isSubmitting}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all shadow-[0_0_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
-              <Send size={14} /> {isSubmitting ? "Submitting..." : "Submit Report"}
+              <Send size={14} /> {isSubmitting ? t("btn_submitting") : t("btn_submit")}
             </button>
           )}
         </div>

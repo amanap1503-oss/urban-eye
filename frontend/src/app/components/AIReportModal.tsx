@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X, Zap, AlertTriangle, Clock, Users, Shield, FileText,
-  TrendingUp, Eye, CheckCircle, Loader2, Cpu, Target, MapPin
+  TrendingUp, Eye, CheckCircle, Loader2, Cpu, Target, MapPin, Volume2, Mic
 } from "lucide-react";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/apiClient";
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface YoloDetection {
@@ -32,6 +31,7 @@ interface AIReport {
   full_report: string;
   yolo_detections: YoloDetection[];
   ai_annotated_image_url?: string;
+  voice_recording_url?: string;
   image_analyzed: boolean;
   yolo_ran: boolean;
 }
@@ -268,6 +268,36 @@ export default function AIReportModal({ issueId, issueTitle, onClose }: AIReport
                     </div>
                   ))}
                 </div>
+
+                {/* ── Citizen Voice Note Audio Player (Admin Access) ───────────────── */}
+                {report.voice_recording_url && (
+                  <Section title="Citizen Voice Recording" icon={<Mic size={13} />} color="#34d399">
+                    <div style={{
+                      background: "rgba(16,185,129,0.08)",
+                      border: "1px solid rgba(52,211,153,0.3)",
+                      borderRadius: 12,
+                      padding: "12px 16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#34d399", fontSize: 12, fontWeight: 600 }}>
+                          <Volume2 size={16} />
+                          <span>Original Voice Complaint Audio Clip</span>
+                        </div>
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", background: "rgba(0,0,0,0.4)", padding: "2px 8px", borderRadius: 10 }}>
+                          Official Admin Access
+                        </span>
+                      </div>
+                      <audio
+                        controls
+                        src={report.voice_recording_url}
+                        style={{ width: "100%", height: 40, borderRadius: 8, outline: "none" }}
+                      />
+                    </div>
+                  </Section>
+                )}
 
                 {/* ── Detection badges ───────────────────────────────── */}
                 <Section title="YOLO Computer Vision" icon={<Eye size={13} />} color="#22d3ee">

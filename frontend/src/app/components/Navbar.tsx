@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, Bell, Search, ChevronDown, Zap, LogOut, CheckCheck, Trash2, Radio } from "lucide-react";
+import { Menu, X, Bell, Search, ChevronDown, Zap, LogOut, CheckCheck, Trash2, Radio, Globe } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { IssueTrackerModal } from "./IssueTrackerPanel";
+import { LANGUAGES, LanguageCode } from "../lib/i18n";
 
 const NAV_LINKS = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Report Issue", href: "/report" },
-  { label: "City Map", href: "/map" },
-  { label: "Kanban", href: "/kanban" },
-  { label: "AI Admin", href: "/admin", isAi: true },
-  { label: "Field Staff", href: "/employee", isEmployee: true },
-  { label: "Rewards", href: "/rewards" },
-  { label: "Profile", href: "/profile" },
+  { labelKey: "nav_dashboard", defaultLabel: "Dashboard", href: "/dashboard" },
+  { labelKey: "nav_report", defaultLabel: "Report Issue", href: "/report" },
+  { labelKey: "nav_map", defaultLabel: "City Map", href: "/map" },
+  { labelKey: "nav_kanban", defaultLabel: "Kanban", href: "/kanban" },
+  { labelKey: "nav_admin", defaultLabel: "AI Admin", href: "/admin", isAi: true },
+  { labelKey: "nav_employee", defaultLabel: "Field Staff", href: "/employee", isEmployee: true },
+  { labelKey: "nav_rewards", defaultLabel: "Rewards", href: "/rewards" },
+  { labelKey: "nav_profile", defaultLabel: "Profile", href: "/profile" },
 ];
 
 function formatRelativeTime(dateString: string): string {
@@ -35,11 +36,13 @@ export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const {
     user, issues, logout, theme, toggleTheme,
+    language, setLanguage, t,
     notifications = [], markNotificationAsRead, markAllNotificationsAsRead, clearNotifications
   } = useApp();
   const newIssues = issues.filter((i) => i.status === "new").length;
@@ -128,7 +131,7 @@ export default function Navbar() {
                       : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                   {isActive && (
                     <motion.div
                       layoutId="activeNav"
@@ -154,6 +157,63 @@ export default function Navbar() {
                 <span className="hidden lg:block">Live Track</span>
               </motion.button>
             )}
+
+            {/* Language Selector Dropdown */}
+            <div className="relative" data-dropdown>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => { setLangOpen(!langOpen); setNotifOpen(false); setProfileOpen(false); }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 hover:text-white transition-all duration-200 shadow-[0_0_12px_rgba(59,130,246,0.1)]"
+                title="Select Language / भाषा चुनें"
+              >
+                <Globe size={14} className="text-blue-400" />
+                <span className="font-bold">{LANGUAGES.find(l => l.code === language)?.nativeName || "EN"}</span>
+                <ChevronDown size={12} className={`transition-transform duration-200 ${langOpen ? "rotate-180" : ""}`} />
+              </motion.button>
+
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-11 w-52 bg-[#0b1020] border border-blue-500/20 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.6)] py-1.5 z-50 overflow-hidden"
+                  >
+                    <div className="px-3 py-1.5 border-b border-white/8 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                      <span>{t("select_language")}</span>
+                      <span className="text-[10px] text-blue-400 font-normal">10 Languages</span>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto py-1">
+                      {LANGUAGES.map((langObj) => {
+                        const isSelected = language === langObj.code;
+                        return (
+                          <button
+                            key={langObj.code}
+                            onClick={() => {
+                              setLanguage(langObj.code);
+                              setLangOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
+                              isSelected
+                                ? "bg-blue-500/20 text-blue-300 font-bold border-l-2 border-blue-400"
+                                : "text-slate-300 hover:bg-white/5 hover:text-white"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span>{langObj.flag}</span>
+                              <span className="font-medium">{langObj.nativeName}</span>
+                            </span>
+                            <span className="text-[10px] text-slate-400 uppercase">{langObj.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <motion.button
               whileHover={{ scale: 1.04 }}

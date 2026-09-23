@@ -9,6 +9,7 @@ import { Issue, ISSUES, INITIAL_CITY_ROSTERS } from "../data/mockData";
 import { CityRosterOfficer } from "../lib/aiAnalyzerService";
 import { apiClient } from "../lib/apiClient";
 import { realtimeWS } from "../lib/wsClient";
+import { LanguageCode, getTranslation } from "../lib/i18n";
 
 type ThemeName = "default" | "blue-steel";
 
@@ -31,6 +32,9 @@ interface AppContextType {
   activities: UserActivity[];
   notifications: AppNotification[];
   theme: ThemeName;
+  language: LanguageCode;
+  setLanguage: (lang: LanguageCode) => void;
+  t: (key: string) => string;
   selectedCity: string;
   setSelectedCity: (city: string) => void;
   roster: CityRosterOfficer[];
@@ -70,6 +74,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [selectedCity, setSelectedCity] = useState<string>("Mumbai");
   const [roster, setRoster] = useState<CityRosterOfficer[]>(INITIAL_CITY_ROSTERS);
+
+  const [language, setLanguageState] = useState<LanguageCode>(() => {
+    if (typeof window === "undefined") return "en";
+    return (window.localStorage.getItem("urbanEyeLanguage") as LanguageCode) || "en";
+  });
+
+  const setLanguage = (lang: LanguageCode) => {
+    setLanguageState(lang);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("urbanEyeLanguage", lang);
+    }
+  };
+
+  const t = (key: string) => getTranslation(language, key);
   // User-specific notification key in localStorage
   const notifStorageKey = user?.uid ? `urbanEyeNotifications_${user.uid}` : "urbanEyeNotifications_guest";
 
@@ -247,6 +265,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       aiSummary: raw.aiSummary || "",
       aiRiskAssessment: raw.aiRiskAssessment || "",
       recommendedAction: raw.recommendedAction || "",
+      voiceRecordingUrl: raw.voiceRecordingUrl || raw.voice_recording_url || undefined,
     };
   }
 
@@ -619,6 +638,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       formData.append("city", issue.city || selectedCity || "Mumbai");
       formData.append("reporter_id", user?.uid || "anonymous");
       formData.append("reporter_name", user?.name || "Anonymous Citizen");
+      if (issue.voiceRecordingUrl) {
+        formData.append("voice_recording", issue.voiceRecordingUrl);
+      }
       if (imageFile) {
         formData.append("image", imageFile);
       }
@@ -781,6 +803,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activities,
         notifications,
         theme,
+        language,
+        setLanguage,
+        t,
         selectedCity,
         setSelectedCity,
         roster,

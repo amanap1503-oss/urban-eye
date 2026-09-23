@@ -51,6 +51,7 @@ export interface Issue {
   aiSummary?: string;
   aiRiskAssessment?: string;
   recommendedAction?: string;
+  voiceRecordingUrl?: string;
 }
 
 export interface User {
