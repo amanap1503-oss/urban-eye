@@ -63,11 +63,10 @@ function BadgeCard({ badge }: { badge: any }) {
   return (
     <motion.div
       whileHover={badge.unlocked ? { y: -3, transition: { duration: 0.2 } } : {}}
-      className={`relative p-4 rounded-2xl border transition-all duration-300 ${
-        badge.unlocked
+      className={`relative p-4 rounded-2xl border transition-all duration-300 ${badge.unlocked
           ? "border-white/12 bg-[rgba(11,16,32,0.8)] hover:border-blue-500/25"
           : "border-white/5 bg-[rgba(5,8,22,0.5)] opacity-60"
-      }`}
+        }`}
     >
       {!badge.unlocked && (
         <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[rgba(5,8,22,0.5)] backdrop-blur-[2px] z-10">
@@ -75,9 +74,8 @@ function BadgeCard({ badge }: { badge: any }) {
         </div>
       )}
       <div className="flex flex-col items-center text-center gap-2">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${
-          badge.unlocked ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10" : "bg-white/5 border border-white/5"
-        }`}>
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${badge.unlocked ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10" : "bg-white/5 border border-white/5"
+          }`}>
           {badge.icon}
         </div>
         <div>
@@ -125,9 +123,8 @@ function RedeemCard({
   return (
     <motion.div
       whileHover={!disabled ? { y: -3, transition: { duration: 0.2 } } : {}}
-      className={`p-4 rounded-2xl border bg-[rgba(11,16,32,0.8)] transition-all duration-300 ${
-        disabled ? "border-white/5 opacity-50" : "border-white/12 hover:border-blue-500/25"
-      }`}
+      className={`p-4 rounded-2xl border bg-[rgba(11,16,32,0.8)] transition-all duration-300 ${disabled ? "border-white/5 opacity-50" : "border-white/12 hover:border-blue-500/25"
+        }`}
     >
       <div className="flex items-center gap-3 mb-3">
         <div
@@ -170,7 +167,7 @@ function RedeemModal({
 
   function handleCopy() {
     if (!code) return;
-    navigator.clipboard.writeText(code).catch(() => {});
+    navigator.clipboard.writeText(code).catch(() => { });
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -385,28 +382,81 @@ export default function Rewards() {
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Badges */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="lg:col-span-2"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Award size={18} className="text-yellow-400" />
-                Achievement Badges
-              </h2>
-              <span className="text-xs text-slate-400">
-                {badges.filter(b => b.unlocked).length}/{badges.length} unlocked
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {badges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} />
-              ))}
-            </div>
-          </motion.div>
+          {/* Main left column (Badges, Redeem, Activity) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Award size={18} className="text-yellow-400" />
+                  Achievement Badges
+                </h2>
+                <span className="text-xs text-slate-400">
+                  {badges.filter(b => b.unlocked).length}/{badges.length} unlocked
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {badges.map((badge) => (
+                  <BadgeCard key={badge.id} badge={badge} />
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Redeem Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Gift size={18} className="text-pink-400" />
+                  Redeem Your Points
+                </h2>
+                <span className="text-xs text-slate-400">Convert civic points into real brand vouchers</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {REDEEM_BRANDS.map((brand) => (
+                  <RedeemCard
+                    key={brand.id}
+                    brand={brand}
+                    onRedeem={handleRedeem}
+                    disabled={user.points < brand.cost}
+                  />
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Activity Log */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="rounded-2xl border border-white/8 bg-[rgba(11,16,32,0.8)] backdrop-blur-sm overflow-hidden"
+            >
+              <div className="p-4 border-b border-white/6">
+                <h3 className="text-sm font-semibold text-white">Recent Activity</h3>
+              </div>
+              <div className="divide-y divide-white/4">
+                {ACTIVITY_LOG.map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/3 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-base flex-shrink-0">
+                      {entry.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium truncate">{entry.title}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{entry.date}</p>
+                    </div>
+                    <span className="text-sm font-bold text-emerald-400">+{entry.points}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
 
           {/* Right column */}
           <div className="space-y-6">
@@ -428,9 +478,8 @@ export default function Rewards() {
                   return (
                     <div
                       key={tier.name}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                        isCurrentTier ? "bg-white/8 border border-white/12" : "opacity-50"
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isCurrentTier ? "bg-white/8 border border-white/12" : "opacity-50"
+                        }`}
                     >
                       <span className="text-lg">{tier.icon}</span>
                       <div className="flex-1">
@@ -461,13 +510,11 @@ export default function Rewards() {
               {LEADERBOARD.map((entry) => (
                 <div
                   key={entry.rank}
-                  className={`flex items-center gap-3 px-4 py-3 border-b border-white/4 last:border-0 transition-colors ${
-                    entry.name === user.name ? "bg-blue-500/8" : "hover:bg-white/3"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 border-b border-white/4 last:border-0 transition-colors ${entry.name === user.name ? "bg-blue-500/8" : "hover:bg-white/3"
+                    }`}
                 >
-                  <div className={`w-6 text-center text-xs font-bold ${
-                    entry.rank === 1 ? "text-yellow-400" : entry.rank === 2 ? "text-slate-300" : entry.rank === 3 ? "text-amber-600" : "text-slate-500"
-                  }`}>
+                  <div className={`w-6 text-center text-xs font-bold ${entry.rank === 1 ? "text-yellow-400" : entry.rank === 2 ? "text-slate-300" : entry.rank === 3 ? "text-amber-600" : "text-slate-500"
+                    }`}>
                     {entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank}
                   </div>
                   <img src={entry.avatar} alt={entry.name} className="w-7 h-7 rounded-full object-cover border border-white/10" />
@@ -514,58 +561,6 @@ export default function Rewards() {
             </motion.div>
           </div>
         </div>
-
-        {/* Redeem Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Gift size={18} className="text-pink-400" />
-              Redeem Your Points
-            </h2>
-            <span className="text-xs text-slate-400">Convert civic points into real brand vouchers</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {REDEEM_BRANDS.map((brand) => (
-              <RedeemCard
-                key={brand.id}
-                brand={brand}
-                onRedeem={handleRedeem}
-                disabled={user.points < brand.cost}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Activity Log */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mt-6 rounded-2xl border border-white/8 bg-[rgba(11,16,32,0.8)] backdrop-blur-sm overflow-hidden"
-        >
-          <div className="p-4 border-b border-white/6">
-            <h3 className="text-sm font-semibold text-white">Recent Activity</h3>
-          </div>
-          <div className="divide-y divide-white/4">
-            {ACTIVITY_LOG.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-4 px-4 py-3 hover:bg-white/3 transition-colors">
-                <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-base flex-shrink-0">
-                  {entry.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white font-medium truncate">{entry.title}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{entry.date}</p>
-                </div>
-                <span className="text-sm font-bold text-emerald-400">+{entry.points}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
       </div>
 
       <RedeemModal

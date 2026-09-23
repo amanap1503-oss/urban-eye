@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useApp } from "../context/AppContext";
 import { ThreeCity } from "../components/ThreeCity";
 import { ThreeGlobe } from "../components/ThreeGlobe";
-import { AreaChartComponent, CivicHealthGauge, DensityHeatmap } from "../components/Charts";
+import { AreaChartComponent, CivicHealthGauge } from "../components/Charts";
 import ScrollExpandMedia from "../../components/ui/scroll-expansion-hero";
 import {
   PlusCircle,
@@ -94,11 +94,10 @@ const FlagModal: React.FC<FlagModalProps> = ({ issue, onClose, onSubmit }) => {
                 <button
                   key={r}
                   onClick={() => setSelected(r)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium border transition-all ${
-                    selected === r
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium border transition-all ${selected === r
                       ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
                       : "bg-white/5 border-white/5 text-slate-300 hover:border-white/15"
-                  }`}
+                    }`}
                 >
                   {r}
                 </button>
@@ -372,11 +371,11 @@ const LocalIssueCard: React.FC<IssueCardProps> = ({ issue }) => {
           {/* Progress Tracker */}
           <div className="grid grid-cols-3 gap-2 text-center text-[9px] font-mono font-bold text-slate-500 pt-1">
             <div className="space-y-1">
-              <div className={`h-1 rounded-full ${["new","in_progress","resolved"].includes(issue.status) ? "bg-pink-400" : "bg-white/5"}`} />
+              <div className={`h-1 rounded-full ${["new", "in_progress", "resolved"].includes(issue.status) ? "bg-pink-400" : "bg-white/5"}`} />
               <span className={issue.status === "new" ? "text-pink-400" : "text-slate-400"}>INTENDED</span>
             </div>
             <div className="space-y-1">
-              <div className={`h-1 rounded-full ${["in_progress","resolved"].includes(issue.status) ? "bg-cyan-400" : "bg-white/5"}`} />
+              <div className={`h-1 rounded-full ${["in_progress", "resolved"].includes(issue.status) ? "bg-cyan-400" : "bg-white/5"}`} />
               <span className={issue.status === "in_progress" ? "text-cyan-400" : "text-slate-400"}>MAPPED</span>
             </div>
             <div className="space-y-1">
@@ -390,11 +389,10 @@ const LocalIssueCard: React.FC<IssueCardProps> = ({ issue }) => {
             {/* Upvote */}
             <button
               onClick={handleUpvote}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${
-                voted
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border active:scale-95 ${voted
                   ? "bg-cyan-500/10 border-cyan-400 text-cyan-300"
                   : "bg-white/5 border-white/5 text-slate-300 hover:border-white/10"
-              }`}
+                }`}
             >
               <ArrowUp className={`w-3.5 h-3.5 ${voted ? "animate-bounce text-cyan-300" : ""}`} />
               <span>{issue.votes + (voted ? 1 : 0)} Upvotes</span>
@@ -455,39 +453,39 @@ const LocalIssueCard: React.FC<IssueCardProps> = ({ issue }) => {
                   <p className="text-slate-400">
                     <strong>Coordinates:</strong> {issue.lat.toFixed(4)}, {issue.lng.toFixed(4)}
                   </p>
-                {issue.status === "pending_approval" && (
-                  <div className="p-3.5 bg-purple-500/10 rounded-xl border border-purple-500/25 space-y-2.5">
-                    <div className="flex items-center gap-2 text-xs font-bold text-purple-300">
-                      <span>📸</span> Field Officer Uploaded Final Resolution Proof
-                    </div>
-                    {issue.resolutionProof && (
-                      <div className="flex items-center gap-3 bg-black/40 p-2 rounded-lg border border-purple-500/20">
-                        <img src={issue.resolutionProof.imageUrl} alt="Final Proof" className="w-16 h-12 rounded object-cover" />
-                        <div className="text-[11px] text-slate-300">
-                          <div><strong className="text-purple-300">Resolved by:</strong> {issue.resolutionProof.resolvedBy}</div>
-                          <div className="text-[10px] text-slate-400">📍 {issue.resolutionProof.locationName}</div>
-                        </div>
+                  {issue.status === "pending_approval" && (
+                    <div className="p-3.5 bg-purple-500/10 rounded-xl border border-purple-500/25 space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-purple-300">
+                        <span>📸</span> Field Officer Uploaded Final Resolution Proof
                       </div>
-                    )}
-                    <p className="text-[11px] text-slate-300 leading-snug">
-                      Please confirm if the problem on site has been completely solved to your satisfaction.
-                    </p>
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        onClick={() => approveResolution(issue.id, true)}
-                        className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md"
-                      >
-                        ✓ Confirm & Move to Resolved
-                      </button>
-                      <button
-                        onClick={() => approveResolution(issue.id, false)}
-                        className="py-2 px-3 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 text-xs font-bold transition-all"
-                      >
-                        ✕ Reject
-                      </button>
+                      {issue.resolutionProof && (
+                        <div className="flex items-center gap-3 bg-black/40 p-2 rounded-lg border border-purple-500/20">
+                          <img src={issue.resolutionProof.imageUrl} alt="Final Proof" className="w-16 h-12 rounded object-cover" />
+                          <div className="text-[11px] text-slate-300">
+                            <div><strong className="text-purple-300">Resolved by:</strong> {issue.resolutionProof.resolvedBy}</div>
+                            <div className="text-[10px] text-slate-400">📍 {issue.resolutionProof.locationName}</div>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-slate-300 leading-snug">
+                        Please confirm if the problem on site has been completely solved to your satisfaction.
+                      </p>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => approveResolution(issue.id, true)}
+                          className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md"
+                        >
+                          ✓ Confirm & Move to Resolved
+                        </button>
+                        <button
+                          onClick={() => approveResolution(issue.id, false)}
+                          className="py-2 px-3 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 text-xs font-bold transition-all"
+                        >
+                          ✕ Reject
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}</div>
+                  )}</div>
 
                 {issue.status !== "resolved" && (
                   <button
@@ -623,139 +621,133 @@ export default function Dashboard() {
               </div>
             </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { title: "Active Reports", val: activeReportsCount, tag: "NEEDS REPAIR", icon: "⚠️", color: "text-pink-400", bg: "bg-pink-500/10" },
-            { title: "Resolved Sockets", val: resolvedReportsCount, tag: "COMPLETED", icon: "✓", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-            { title: "Citizen Trust Score", val: "98.2%", tag: "EXCELLENT", icon: "🛡️", color: "text-cyan-400", bg: "bg-cyan-500/10" },
-            { title: "Community Points", val: user?.points ?? 0, tag: "REDEEMABLE", icon: "🏆", color: "text-violet-400", bg: "bg-violet-500/10" },
-          ].map((stat, i) => (
-            <div key={i} className="glass-card p-5 rounded-2xl border border-white/5 bg-slate-950/40 relative overflow-hidden group">
-              <div className="flex justify-between items-start">
-                <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">{stat.title}</span>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${stat.bg} ${stat.color}`}>
-                  <span>{stat.icon}</span>
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-3xl font-display font-extrabold text-white tracking-tighter">{stat.val}</div>
-                <span className={`text-[9px] font-mono font-bold ${stat.color} uppercase tracking-widest block mt-1`}>● {stat.tag}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Globe bento */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          <div className="lg:col-span-2 glass-card rounded-2xl border border-white/5 bg-slate-950/40 p-6 flex flex-col justify-between overflow-hidden min-h-[460px]">
-            <div className="space-y-1 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse inline-block"></span>
-                <h3 className="font-bold text-base text-white">Civic Intelligence Globe</h3>
-              </div>
-              <p className="text-xs text-slate-400">Live hot-spot detection across transatlantic and Indian municipal cells. Spin and drag to load telemetry.</p>
-            </div>
-            <div className="flex-1 h-[340px] w-full relative z-0">
-              <ThreeGlobe />
-            </div>
-          </div>
-
-          <div className="lg:col-span-1 glass-card rounded-2xl border border-white/5 bg-slate-950/40 p-6 flex flex-col justify-between">
-            <div className="space-y-1">
-              <h3 className="font-bold text-base text-white">Live Operations Stream</h3>
-              <p className="text-xs text-slate-400">Real-time telemetry reports broadcasted by neighborhood watch units</p>
-            </div>
-            <div className="space-y-3.5 my-4 overflow-y-auto max-h-[260px] scrollbar-none pr-1 pt-1">
-              {issues.slice(0, 4).map(rep => (
-                <div key={rep.id} className="p-3 bg-slate-900/40 rounded-xl border border-white/5 flex gap-3 items-start hover:border-white/10 transition-colors">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">
-                    {rep.category === "Infrastructure" ? "🏢" : rep.category === "Safety" ? "🛡️" : rep.category === "Environment" ? "🌱" : rep.category === "Utilities" ? "💡" : rep.category === "Traffic" ? "🚦" : "🏛️"}
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { title: "Active Reports", val: activeReportsCount, tag: "NEEDS REPAIR", color: "text-pink-400" },
+                { title: "Resolved Sockets", val: resolvedReportsCount, tag: "COMPLETED", color: "text-emerald-400" },
+                { title: "Citizen Trust Score", val: "98.2%", tag: "EXCELLENT", color: "text-cyan-400" },
+                { title: "Community Points", val: user?.points ?? 0, tag: "REDEEMABLE", color: "text-violet-400" },
+              ].map((stat, i) => (
+                <div key={i} className="glass-card p-5 rounded-2xl border border-white/5 bg-slate-950/40 relative overflow-hidden group flex flex-col justify-between">
+                  <div>
+                    <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest block">{stat.title}</span>
+                    <div className="text-3xl font-display font-extrabold text-white tracking-tighter mt-1">{stat.val}</div>
                   </div>
-                  <div className="text-left text-xs space-y-0.5">
-                    <strong className="text-slate-200 block text-sm leading-snug line-clamp-1">{rep.title}</strong>
-                    <span className="text-[10px] text-slate-400 block">{rep.location} • {rep.reportedAt}</span>
-                    <span className={`text-[9px] font-mono font-bold uppercase ${rep.status === "new" ? "text-pink-400" : rep.status === "in_progress" ? "text-cyan-400" : "text-emerald-400"}`}>
-                      ● {rep.status.replace("_", " ")}
-                    </span>
-                  </div>
+                  <span className={`text-[9px] font-mono font-bold ${stat.color} uppercase tracking-widest block mt-2`}>● {stat.tag}</span>
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => document.getElementById("community-feed-section")?.scrollIntoView({ behavior: "smooth" })}
-              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/5 cursor-pointer"
-            >
-              View Community Feed <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
 
-        {/* Charts */}
-        <div id="charts-command-center" className="space-y-6 pt-6">
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-cyan-400" /> District Diagnostics Room
-            </h3>
-            <p className="text-xs text-slate-400">Visual analytical logs representing municipal load balancing</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AreaChartComponent />
-            <CivicHealthGauge />
-          </div>
-          <DensityHeatmap />
-        </div>
+            {/* Globe bento */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              <div className="lg:col-span-2 glass-card rounded-2xl border border-white/5 bg-slate-950/40 p-6 flex flex-col justify-between overflow-hidden min-h-[460px]">
+                <div className="space-y-1 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse inline-block"></span>
+                    <h3 className="font-bold text-base text-white">Civic Intelligence Globe</h3>
+                  </div>
+                  <p className="text-xs text-slate-400">Live hot-spot detection across transatlantic and Indian municipal cells. Spin and drag to load telemetry.</p>
+                </div>
+                <div className="flex-1 h-[340px] w-full relative z-0">
+                  <ThreeGlobe />
+                </div>
+              </div>
 
-        {/* Community Feed */}
-        <div id="community-feed-section" className="space-y-6 pt-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Community Broadcast Feed</h2>
-              <p className="text-xs text-slate-400">Verified resident complaints, priority indexes, and ongoing civic resolutions.</p>
+              <div className="lg:col-span-1 glass-card rounded-2xl border border-white/5 bg-slate-950/40 p-6 flex flex-col justify-between">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-base text-white">Live Operations Stream</h3>
+                  <p className="text-xs text-slate-400">Real-time telemetry reports broadcasted by neighborhood watch units</p>
+                </div>
+                <div className="space-y-3.5 my-4 overflow-y-auto max-h-[260px] scrollbar-none pr-1 pt-1">
+                  {issues.slice(0, 4).map(rep => (
+                    <div key={rep.id} className="p-3 bg-slate-900/40 rounded-xl border border-white/5 flex gap-3 items-start hover:border-white/10 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">
+                        {rep.category === "Infrastructure" ? "🏢" : rep.category === "Safety" ? "🛡️" : rep.category === "Environment" ? "🌱" : rep.category === "Utilities" ? "💡" : rep.category === "Traffic" ? "🚦" : "🏛️"}
+                      </div>
+                      <div className="text-left text-xs space-y-0.5">
+                        <strong className="text-slate-200 block text-sm leading-snug line-clamp-1">{rep.title}</strong>
+                        <span className="text-[10px] text-slate-400 block">{rep.location} • {rep.reportedAt}</span>
+                        <span className={`text-[9px] font-mono font-bold uppercase ${rep.status === "new" ? "text-pink-400" : rep.status === "in_progress" ? "text-cyan-400" : "text-emerald-400"}`}>
+                          ● {rep.status.replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => document.getElementById("community-feed-section")?.scrollIntoView({ behavior: "smooth" })}
+                  className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/5 cursor-pointer"
+                >
+                  View Community Feed <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-xs text-slate-400 font-mono">Category:</span>
-              <select
-                value={feedCategory}
-                onChange={e => setFeedCategory(e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-sans"
-              >
-                <option value="All">All Categories</option>
-                <option value="Infrastructure">Infrastructure</option>
-                <option value="Safety">Safety</option>
-                <option value="Environment">Environment</option>
-                <option value="Utilities">Utilities</option>
-                <option value="Traffic">Traffic</option>
-                <option value="Public Spaces">Public Spaces</option>
-              </select>
-              <span className="text-slate-600">|</span>
-              <span className="text-xs text-slate-400 font-mono">Status:</span>
-              <select
-                value={feedStatus}
-                onChange={e => setFeedStatus(e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-sans"
-              >
-                <option value="All">All Statuses</option>
-                <option value="new">New</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-              </select>
+
+            {/* Charts */}
+            <div id="charts-command-center" className="space-y-6 pt-6">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-cyan-400" /> District Diagnostics Room
+                </h3>
+                <p className="text-xs text-slate-400">Visual analytical logs representing municipal load balancing</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AreaChartComponent />
+                <CivicHealthGauge />
+              </div>
+            </div>
+
+            {/* Community Feed */}
+            <div id="community-feed-section" className="space-y-6 pt-12">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Community Broadcast Feed</h2>
+                  <p className="text-xs text-slate-400">Verified resident complaints, priority indexes, and ongoing civic resolutions.</p>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-xs text-slate-400 font-mono">Category:</span>
+                  <select
+                    value={feedCategory}
+                    onChange={e => setFeedCategory(e.target.value)}
+                    className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-sans"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                    <option value="Safety">Safety</option>
+                    <option value="Environment">Environment</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Traffic">Traffic</option>
+                    <option value="Public Spaces">Public Spaces</option>
+                  </select>
+                  <span className="text-slate-600">|</span>
+                  <span className="text-xs text-slate-400 font-mono">Status:</span>
+                  <select
+                    value={feedStatus}
+                    onChange={e => setFeedStatus(e.target.value)}
+                    className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-sans"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                {issues
+                  .filter(rep => {
+                    const matchesCategory = feedCategory === "All" || rep.category === feedCategory;
+                    const matchesStatus = feedStatus === "All" || rep.status === feedStatus;
+                    return matchesCategory && matchesStatus;
+                  })
+                  .map(rep => (
+                    <LocalIssueCard key={rep.id} issue={rep} />
+                  ))}
+              </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-            {issues
-              .filter(rep => {
-                const matchesCategory = feedCategory === "All" || rep.category === feedCategory;
-                const matchesStatus = feedStatus === "All" || rep.status === feedStatus;
-                return matchesCategory && matchesStatus;
-              })
-              .map(rep => (
-                <LocalIssueCard key={rep.id} issue={rep} />
-              ))}
-          </div>
-        </div>
-        </div>
         </ScrollExpandMedia>
       </main>
     </div>

@@ -265,9 +265,8 @@ function LocationPicker({ onSelect }: {
         {/* GPS button */}
         {mapReady && (
           <button onClick={handleGPS} disabled={gpsLoading}
-            className={`absolute top-2 left-2 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all backdrop-blur-sm border shadow-lg ${
-              gpsLoading ? "bg-blue-600/70 border-blue-500/50 text-white" : "bg-[rgba(7,13,26,0.9)] border-white/15 text-slate-300 hover:text-white hover:border-blue-500/40"
-            } disabled:opacity-60`}>
+            className={`absolute top-2 left-2 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all backdrop-blur-sm border shadow-lg ${gpsLoading ? "bg-blue-600/70 border-blue-500/50 text-white" : "bg-[rgba(7,13,26,0.9)] border-white/15 text-slate-300 hover:text-white hover:border-blue-500/40"
+              } disabled:opacity-60`}>
             <Navigation size={11} className={gpsLoading ? "animate-spin" : ""} />
             {gpsLoading ? "Detecting..." : "Use My GPS"}
           </button>
@@ -418,10 +417,9 @@ export default function ReportIssue() {
           <div className="flex items-center justify-between">
             {STEPS.map(s => (
               <div key={s.id} className="flex flex-col items-center gap-1">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                  step > s.id ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400" :
-                  step === s.id ? "bg-blue-600/25 border border-blue-500/50 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]" :
-                  "bg-white/5 border border-white/10 text-slate-500"}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-300 ${step > s.id ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400" :
+                    step === s.id ? "bg-blue-600/25 border border-blue-500/50 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]" :
+                      "bg-white/5 border border-white/10 text-slate-500"}`}>
                   {step > s.id ? <CheckCircle2 size={14} /> : <s.icon size={14} />}
                 </div>
                 <span className={`text-[10px] font-medium hidden sm:block ${step === s.id ? "text-blue-300" : "text-slate-500"}`}>{t(s.key)}</span>
@@ -448,8 +446,7 @@ export default function ReportIssue() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {CATEGORIES.map(cat => (
                     <button key={cat.value} onClick={() => setForm(f => ({ ...f, category: cat.value }))}
-                      className={`flex items-center gap-2.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all ${
-                        form.category === cat.value ? "border-blue-500/50 bg-blue-500/15 text-white" : "border-white/8 bg-white/3 text-slate-400 hover:border-white/15 hover:text-white"}`}>
+                      className={`flex items-center gap-2.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all ${form.category === cat.value ? "border-blue-500/50 bg-blue-500/15 text-white" : "border-white/8 bg-white/3 text-slate-400 hover:border-white/15 hover:text-white"}`}>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: cat.color + "20" }}>
                         <cat.icon size={13} style={{ color: cat.color }} />
                       </div>

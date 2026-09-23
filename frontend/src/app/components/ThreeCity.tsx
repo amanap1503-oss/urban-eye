@@ -61,7 +61,7 @@ export const ThreeCity: React.FC = () => {
       const d = Math.random() * 2 + 1.2;
 
       const geometry = new THREE.BoxGeometry(w, h, d);
-      
+
       // Cyber glow material
       const material = new THREE.MeshPhongMaterial({
         color: 0x0b1329,
@@ -73,11 +73,11 @@ export const ThreeCity: React.FC = () => {
       });
 
       const building = new THREE.Mesh(geometry, material);
-      
+
       // Position on a grid, avoid placing in center block
       let px = (Math.random() - 0.5) * size;
       let pz = (Math.random() - 0.5) * size;
-      
+
       while (Math.abs(px) < 4 && Math.abs(pz) < 4) {
         px = (Math.random() - 0.5) * size;
         pz = (Math.random() - 0.5) * size;
@@ -123,7 +123,7 @@ export const ThreeCity: React.FC = () => {
       // Choose horizontal or vertical roads
       const isHorizontal = Math.random() > 0.5;
       const roadCoord = (Math.floor(Math.random() * 10) - 5) * 6; // snap to grid helper lines
-      
+
       const x = isHorizontal ? (Math.random() - 0.5) * size : roadCoord;
       const y = 0.1; // Float just above floor
       const z = isHorizontal ? roadCoord : (Math.random() - 0.5) * size;
@@ -137,7 +137,7 @@ export const ThreeCity: React.FC = () => {
     }
 
     particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
+
     const particleMaterial = new THREE.PointsMaterial({
       color: 0x06b6d4,
       size: 0.3,

@@ -101,7 +101,7 @@ export default function MapView() {
     if (filter !== "all" && i.category !== filter) return false;
     if (statusFilter !== "all" && i.status !== statusFilter) return false;
     if (search && !i.title.toLowerCase().includes(search.toLowerCase()) &&
-        !i.location.toLowerCase().includes(search.toLowerCase())) return false;
+      !i.location.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -611,9 +611,8 @@ export default function MapView() {
                         style={{ backgroundColor: categoryColor(selectedIssue.category) + "20", color: categoryColor(selectedIssue.category) }}>
                         {selectedIssue.category}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${
-                        selectedIssue.status === "resolved" ? "bg-emerald-500/15 text-emerald-400" :
-                        selectedIssue.status === "in_progress" ? "bg-blue-500/15 text-blue-400" : "bg-slate-500/15 text-slate-400"}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${selectedIssue.status === "resolved" ? "bg-emerald-500/15 text-emerald-400" :
+                          selectedIssue.status === "in_progress" ? "bg-blue-500/15 text-blue-400" : "bg-slate-500/15 text-slate-400"}`}>
                         {selectedIssue.status.replace("_", " ")}
                       </span>
                     </div>
@@ -651,8 +650,7 @@ export default function MapView() {
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     <button onClick={() => handleVote(selectedIssue.id)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                        votedIds.has(selectedIssue.id) ? "bg-blue-500/20 border-blue-500/40 text-blue-300" : "bg-white/5 border-white/10 text-slate-300 hover:border-blue-500/30 hover:text-blue-300"}`}>
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${votedIds.has(selectedIssue.id) ? "bg-blue-500/20 border-blue-500/40 text-blue-300" : "bg-white/5 border-white/10 text-slate-300 hover:border-blue-500/30 hover:text-blue-300"}`}>
                       <ArrowUp size={11} /> {selectedIssue.votes} votes
                     </button>
                   </div>
@@ -688,9 +686,8 @@ export default function MapView() {
                             <p className="text-xs font-medium text-white truncate group-hover:text-blue-200 transition-colors">{issue.title}</p>
                             <p className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1"><MapPin size={8} />{issue.location}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium capitalize ${
-                                issue.status === "resolved" ? "bg-emerald-500/15 text-emerald-400" :
-                                issue.status === "in_progress" ? "bg-blue-500/15 text-blue-400" : "bg-slate-500/15 text-slate-400"}`}>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium capitalize ${issue.status === "resolved" ? "bg-emerald-500/15 text-emerald-400" :
+                                  issue.status === "in_progress" ? "bg-blue-500/15 text-blue-400" : "bg-slate-500/15 text-slate-400"}`}>
                                 {issue.status.replace("_", " ")}
                               </span>
                               {issue.priority === "critical" && <span className="text-[9px] text-red-400 font-bold">CRITICAL</span>}

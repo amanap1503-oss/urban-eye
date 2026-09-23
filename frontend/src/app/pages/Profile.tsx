@@ -15,21 +15,21 @@ import { UserActivity } from "../lib/activityService";
 import { IssueTracker } from "../components/IssueTrackerPanel";
 
 const RANK_TIERS_DATA = [
-  { name: "Newcomer",       minPoints: 0,     maxPoints: 500,   color: "#64748b", icon: "🌱" },
-  { name: "Issue Tracker",  minPoints: 500,   maxPoints: 2000,  color: "#f59e0b", icon: "🔍" },
-  { name: "Community Star", minPoints: 2000,  maxPoints: 4000,  color: "#06b6d4", icon: "⭐" },
-  { name: "City Champion",  minPoints: 4000,  maxPoints: 6000,  color: "#3b82f6", icon: "🏆" },
-  { name: "Civic Pioneer",  minPoints: 6000,  maxPoints: 8000,  color: "#8b5cf6", icon: "🚀" },
-  { name: "City Guardian",  minPoints: 8000,  maxPoints: 10000, color: "#ec4899", icon: "🛡️" },
+  { name: "Newcomer", minPoints: 0, maxPoints: 500, color: "#64748b", icon: "🌱" },
+  { name: "Issue Tracker", minPoints: 500, maxPoints: 2000, color: "#f59e0b", icon: "🔍" },
+  { name: "Community Star", minPoints: 2000, maxPoints: 4000, color: "#06b6d4", icon: "⭐" },
+  { name: "City Champion", minPoints: 4000, maxPoints: 6000, color: "#3b82f6", icon: "🏆" },
+  { name: "Civic Pioneer", minPoints: 6000, maxPoints: 8000, color: "#8b5cf6", icon: "🚀" },
+  { name: "City Guardian", minPoints: 8000, maxPoints: 10000, color: "#ec4899", icon: "🛡️" },
 ];
 
 const DEFAULT_BADGES = [
-  { id: "b1", name: "First Report",       description: "Submitted your first civic issue",  icon: "🏙️", unlocked: false, progress: 0,    total: 1     },
-  { id: "b2", name: "Community Voice",    description: "Reported 10+ issues",               icon: "📢", unlocked: false, progress: 0,    total: 10    },
-  { id: "b3", name: "Problem Solver",     description: "Had 25 issues resolved",            icon: "✅", unlocked: false, progress: 0,    total: 25    },
-  { id: "b4", name: "Neighborhood Hero",  description: "Earned 5000 civic points",          icon: "🦸", unlocked: false, progress: 0,    total: 5000  },
-  { id: "b5", name: "Trend Setter",       description: "Get 100 upvotes on a single issue", icon: "🔥", unlocked: false, progress: 0,    total: 100   },
-  { id: "b6", name: "City Architect",     description: "Report 100 issues",                 icon: "🏛️", unlocked: false, progress: 0,    total: 100   },
+  { id: "b1", name: "First Report", description: "Submitted your first civic issue", icon: "🏙️", unlocked: false, progress: 0, total: 1 },
+  { id: "b2", name: "Community Voice", description: "Reported 10+ issues", icon: "📢", unlocked: false, progress: 0, total: 10 },
+  { id: "b3", name: "Problem Solver", description: "Had 25 issues resolved", icon: "✅", unlocked: false, progress: 0, total: 25 },
+  { id: "b4", name: "Neighborhood Hero", description: "Earned 5000 civic points", icon: "🦸", unlocked: false, progress: 0, total: 5000 },
+  { id: "b5", name: "Trend Setter", description: "Get 100 upvotes on a single issue", icon: "🔥", unlocked: false, progress: 0, total: 100 },
+  { id: "b6", name: "City Architect", description: "Report 100 issues", icon: "🏛️", unlocked: false, progress: 0, total: 100 },
 ];
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -285,15 +285,14 @@ function EditIssueModal({
                 <button
                   key={s}
                   onClick={() => setStatus(s)}
-                  className={`flex-1 py-2 rounded-xl border text-xs font-medium capitalize transition-all ${
-                    status === s
+                  className={`flex-1 py-2 rounded-xl border text-xs font-medium capitalize transition-all ${status === s
                       ? s === "resolved"
                         ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
                         : s === "in_progress"
-                        ? "bg-blue-500/20 border-blue-500/40 text-blue-300"
-                        : "bg-slate-500/20 border-slate-500/40 text-slate-300"
+                          ? "bg-blue-500/20 border-blue-500/40 text-blue-300"
+                          : "bg-slate-500/20 border-slate-500/40 text-slate-300"
                       : "bg-white/3 border-white/8 text-slate-500 hover:text-white"
-                  }`}
+                    }`}
                 >
                   {s.replace("_", " ")}
                 </button>
@@ -317,11 +316,10 @@ function EditIssueModal({
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              saved
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${saved
                 ? "bg-emerald-600 text-white"
                 : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_16px_rgba(59,130,246,0.3)]"
-            } disabled:opacity-60`}
+              } disabled:opacity-60`}
           >
             {saved ? "Saved ✓" : saving ? "Saving..." : "Save Changes"}
           </button>
@@ -387,13 +385,12 @@ function IssueRow({ issue }: { issue: Issue }) {
         </div>
 
         <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${
-            issue.status === "resolved"
+          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0 ${issue.status === "resolved"
               ? "bg-emerald-500/15 text-emerald-400"
               : issue.status === "in_progress"
-              ? "bg-blue-500/15 text-blue-400"
-              : "bg-slate-500/15 text-slate-400"
-          }`}
+                ? "bg-blue-500/15 text-blue-400"
+                : "bg-slate-500/15 text-slate-400"
+            }`}
         >
           {issue.status.replace("_", " ")}
         </span>
@@ -439,11 +436,10 @@ function IssueRow({ issue }: { issue: Issue }) {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs transition-colors text-left disabled:opacity-50 ${
-                    confirmDelete
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs transition-colors text-left disabled:opacity-50 ${confirmDelete
                       ? "bg-red-500/15 text-red-300 hover:bg-red-500/25"
                       : "text-slate-300 hover:text-red-300 hover:bg-white/6"
-                  }`}
+                    }`}
                 >
                   {deleting ? (
                     <>
@@ -598,11 +594,10 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              saved
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${saved
                 ? "bg-emerald-600 text-white"
                 : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_16px_rgba(59,130,246,0.3)]"
-            } disabled:opacity-60`}
+              } disabled:opacity-60`}
           >
             {saved ? "Saved ✓" : saving ? "Saving..." : "Save Changes"}
           </button>
@@ -652,7 +647,7 @@ export default function Profile() {
     return (
       <div style={{ minHeight: "100vh", paddingTop: "5.5rem", paddingBottom: "3rem", fontFamily: "'Inter', sans-serif" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 1.5rem" }}>
-          
+
           {/* Employee Header Card */}
           <div style={{
             background: "linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(37,99,235,0.08) 100%)",
@@ -819,10 +814,10 @@ export default function Profile() {
       user.photoURL ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8B5CF6&color=fff&size=100`;
 
-    const assignedIssues  = issues.filter(i => i.assignedTeam);
-    const resolvedIssues  = issues.filter(i => i.status === "resolved");
-    const criticalIssues  = issues.filter(i => i.aiPriorityLevel === "critical" && i.status !== "resolved");
-    const overdueIssues   = issues.filter(i => i.slaDeadline && new Date(i.slaDeadline) < new Date() && i.status !== "resolved");
+    const assignedIssues = issues.filter(i => i.assignedTeam);
+    const resolvedIssues = issues.filter(i => i.status === "resolved");
+    const criticalIssues = issues.filter(i => i.aiPriorityLevel === "critical" && i.status !== "resolved");
+    const overdueIssues = issues.filter(i => i.slaDeadline && new Date(i.slaDeadline) < new Date() && i.status !== "resolved");
 
     return (
       <div style={{ minHeight: "100vh", paddingTop: "5.5rem", paddingBottom: "3rem", fontFamily: "'Inter', sans-serif" }}>
@@ -992,7 +987,7 @@ export default function Profile() {
   const myIssues = issues.filter(
     i => i.reportedBy === user.uid || i.reportedBy === user.name
   );
-  const resolved   = myIssues.filter(i => i.status === "resolved");
+  const resolved = myIssues.filter(i => i.status === "resolved");
   const inProgress = myIssues.filter(i => i.status === "in_progress");
 
   const reportsFiled = user.reportsFiled ?? myIssues.length;
@@ -1021,7 +1016,7 @@ export default function Profile() {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
     const data = [];
-    
+
     // Go back 5 months + current month (6 months total)
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -1104,11 +1099,11 @@ export default function Profile() {
     myIssues.length > 0 ? Math.round((resolved.length / myIssues.length) * 100) : 0;
 
   const profileStats = [
-    { label: "Issues Reported", value: reportsFiled,                                icon: MapPin,       color: "#3b82f6" },
-    { label: "Resolved",        value: reportsResolved,                             icon: CheckCircle2, color: "#10b981" },
-    { label: "In Progress",     value: inProgress.length,                           icon: Clock,        color: "#f59e0b" },
-    { label: "Resolution Rate", value: `${resolutionRate}%`,                        icon: TrendingUp,   color: "#8b5cf6" },
-    { label: "Badges Earned",   value: badges.filter(b => b.unlocked).length,       icon: Award,        color: "#06b6d4" },
+    { label: "Issues Reported", value: reportsFiled, icon: MapPin, color: "#3b82f6" },
+    { label: "Resolved", value: reportsResolved, icon: CheckCircle2, color: "#10b981" },
+    { label: "In Progress", value: inProgress.length, icon: Clock, color: "#f59e0b" },
+    { label: "Resolution Rate", value: `${resolutionRate}%`, icon: TrendingUp, color: "#8b5cf6" },
+    { label: "Badges Earned", value: badges.filter(b => b.unlocked).length, icon: Award, color: "#06b6d4" },
   ];
 
   return (
@@ -1226,11 +1221,11 @@ export default function Profile() {
                 <AreaChart data={monthlyActivityData}>
                   <defs>
                     <linearGradient id="reportedGrad2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.3} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="resolvedGrad2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
@@ -1381,11 +1376,10 @@ export default function Profile() {
                 {badges.map(badge => (
                   <div
                     key={badge.id}
-                    className={`flex flex-col items-center p-2 rounded-xl transition-all ${
-                      badge.unlocked
+                    className={`flex flex-col items-center p-2 rounded-xl transition-all ${badge.unlocked
                         ? "bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/8"
                         : "bg-white/3 border border-white/5 opacity-40"
-                    }`}
+                      }`}
                     title={badge.description}
                   >
                     <span className="text-xl">{badge.icon}</span>
@@ -1406,32 +1400,32 @@ export default function Profile() {
               {activities.length === 0 ? (
                 <p className="text-xs text-slate-500 text-center py-4">No activity yet.</p>
               ) : (
-              <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-px bg-white/8" />
-                <div className="space-y-4">
-                  {(activities.length > 0 ? activities.slice(0, 10) : []).map((entry: any, i: number) => (
-                    <motion.div
-                      key={entry.id}
-                      initial={{ opacity: 0, x: -12 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.07 }}
-                      className="flex gap-3 pl-2"
-                    >
-                      <div className="w-6 h-6 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center flex-shrink-0 relative z-10 text-xs">
-                        {entry.icon || ACTIVITY_ICONS[entry.type] || "📌"}
-                      </div>
-                      <div className="flex-1 min-w-0 pb-3">
-                        <p className="text-xs text-white font-medium leading-snug">{entry.label || entry.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[10px] text-slate-500">{entry.date}</p>
-                          {entry.points && <span className="text-[10px] font-bold text-emerald-400">+{entry.points} pts</span>}
+                <div className="relative">
+                  <div className="absolute left-4 top-0 bottom-0 w-px bg-white/8" />
+                  <div className="space-y-4">
+                    {(activities.length > 0 ? activities.slice(0, 10) : []).map((entry: any, i: number) => (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, x: -12 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.07 }}
+                        className="flex gap-3 pl-2"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center flex-shrink-0 relative z-10 text-xs">
+                          {entry.icon || ACTIVITY_ICONS[entry.type] || "📌"}
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div className="flex-1 min-w-0 pb-3">
+                          <p className="text-xs text-white font-medium leading-snug">{entry.label || entry.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] text-slate-500">{entry.date}</p>
+                            {entry.points && <span className="text-[10px] font-bold text-emerald-400">+{entry.points} pts</span>}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
             </motion.div>
           </div>

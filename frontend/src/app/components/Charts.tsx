@@ -24,7 +24,7 @@ export const AreaChartComponent: React.FC = () => {
   const padding = 40;
   const chartHeight = 200;
   const chartWidth = 500;
-  
+
   // Calculate SVG dimensions
   const totalWidth = chartWidth + padding * 2;
   const totalHeight = chartHeight + padding * 2;
@@ -74,10 +74,10 @@ export const AreaChartComponent: React.FC = () => {
               <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
@@ -96,7 +96,7 @@ export const AreaChartComponent: React.FC = () => {
 
           {/* Area under reported */}
           <polygon points={reportedAreaPoints} fill="url(#reportedGrad)" />
-          
+
           {/* Area under resolved */}
           <polygon points={resolvedAreaPoints} fill="url(#resolvedGrad)" />
 
@@ -270,70 +270,6 @@ export const CivicHealthGauge: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-};
-
-export const DensityHeatmap: React.FC = () => {
-  const sectors = [
-    { name: 'Grid-1', cellId: 'A1', intensity: 80, issue: 'Pothole density high' },
-    { name: 'Grid-2', cellId: 'A2', intensity: 20, issue: 'All systems green' },
-    { name: 'Grid-3', cellId: 'A3', intensity: 45, issue: 'Minor debris reported' },
-    { name: 'Grid-4', cellId: 'B1', intensity: 10, issue: 'Resolved lighting' },
-    { name: 'Grid-5', cellId: 'B2', intensity: 95, issue: 'Water main rupture threat' },
-    { name: 'Grid-6', cellId: 'B3', intensity: 30, issue: 'Scheduled maintenance' },
-    { name: 'Grid-7', cellId: 'C1', intensity: 65, issue: 'Abandoned vehicles list' },
-    { name: 'Grid-8', cellId: 'C2', intensity: 50, issue: 'Trash cans full limit' },
-    { name: 'Grid-9', cellId: 'C3', intensity: 5, issue: 'Optimum grid status' }
-  ];
-
-  const [activeCell, setActiveCell] = useState<typeof sectors[0] | null>(null);
-
-  // Helper for grid cell color mapping
-  const getCellColor = (intensity: number) => {
-    if (intensity > 75) return 'bg-rose-500/80 border-rose-400/40 shadow-[0_0_15px_rgba(244,63,94,0.3)]';
-    if (intensity > 50) return 'bg-orange-500/60 border-orange-400/30';
-    if (intensity > 25) return 'bg-amber-500/40 border-amber-400/20';
-    return 'bg-emerald-500/30 border-emerald-400/10';
-  };
-
-  return (
-    <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row gap-6 justify-between">
-      <div className="flex-1 space-y-2">
-        <h4 className="font-sans font-bold text-base text-white">Urban Density Heatmap</h4>
-        <p className="text-xs text-slate-400">Live load balance and complaint urgency matrix</p>
-
-        <div className="mt-4 p-4 rounded-xl bg-slate-950/40 border border-white/5 min-h-[92px]">
-          {activeCell ? (
-            <motion.div
-              initial={{ opacity: 0, x: -5 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-1"
-            >
-              <div className="text-xs font-mono font-bold text-cyan-400">SECTOR GRID {activeCell.cellId}</div>
-              <div className="text-sm font-bold text-white">{activeCell.name} : {activeCell.issue}</div>
-              <div className="text-[10px] text-slate-400">Urgency Level Score: <strong className="text-rose-400 font-mono">{activeCell.intensity}/100</strong></div>
-            </motion.div>
-          ) : (
-            <div className="text-xs text-slate-400 flex items-center h-full pt-4 italic">
-              Hover over heatmap sectors to load district telemetry data.
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 w-full max-w-[200px] mx-auto md:mx-0">
-        {sectors.map((sec, i) => (
-          <div
-            key={i}
-            className={`aspect-square rounded-lg border transition-all duration-300 cursor-pointer flex items-center justify-center font-mono text-xs font-bold text-white ${getCellColor(sec.intensity)}`}
-            onMouseEnter={() => setActiveCell(sec)}
-            onMouseLeave={() => setActiveCell(null)}
-          >
-            {sec.cellId}
-          </div>
-        ))}
       </div>
     </div>
   );
