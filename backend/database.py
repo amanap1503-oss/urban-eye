@@ -19,6 +19,10 @@ async def init_postgres_db():
     """
     Connects to default 'postgres' database and creates 'urban_eye' database if missing.
     """
+    if "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
+        print("[PostgreSQL Init] Skipping auto-create for remote database.")
+        return
+        
     try:
         url_body = DATABASE_URL.split("://")[1]
         user_pass, host_port_db = url_body.split("@")

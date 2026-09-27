@@ -537,13 +537,6 @@ export default function Dashboard() {
   const { issues, user, loading } = useApp();
   const [feedCategory, setFeedCategory] = useState<string>("All");
   const [feedStatus, setFeedStatus] = useState<string>("All");
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const x = (e.clientX / window.innerWidth - 0.5) * 15;
-    const y = (e.clientY / window.innerHeight - 0.5) * 15;
-    setMousePos({ x, y });
-  };
 
   const activeReportsCount = issues.filter(r => r.status !== "resolved").length;
   const resolvedReportsCount = issues.filter(r => r.status === "resolved").length;
@@ -561,7 +554,6 @@ export default function Dashboard() {
 
   return (
     <div
-      onMouseMove={handleMouseMove}
       className="min-h-screen bg-[#050816] text-slate-100 flex flex-col overflow-x-hidden selection:bg-cyan-500/20 selection:text-cyan-300 font-sans"
     >
       <div className="fixed top-0 inset-x-0 h-[600px] bg-gradient-to-b from-blue-950/20 via-cyan-950/5 to-transparent pointer-events-none z-0" />
@@ -581,45 +573,9 @@ export default function Dashboard() {
           bgImageSrc="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=2000&q=80"
           title="Building Smarter Cities"
           date="Urban Eye Intelligence"
-          scrollToExpand="Scroll down to expand Dashboard"
           textBlend
         >
           <div className="max-w-7xl mx-auto px-4 md:px-8 pt-16 pb-32 space-y-12 w-full">
-            {/* Hero Card */}
-            <div className="relative min-h-[420px] rounded-3xl overflow-hidden border border-white/10 bg-slate-950/80 backdrop-blur-3xl flex flex-col lg:flex-row items-center justify-between p-8 md:p-12 gap-8 shadow-2xl">
-              <div className="max-w-xl space-y-6 relative z-10 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/20">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                  <span className="font-mono text-[9px] font-bold text-cyan-300 uppercase tracking-widest">SYSTEM ONLINE: DISTRICT SECTOR-12</span>
-                </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-white leading-tight font-sans">
-                  Building <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500">Smarter Cities</span> Together
-                </h1>
-                <p className="text-sm md:text-base text-slate-300 leading-relaxed max-w-md mx-auto lg:mx-0">
-                  Report civic issues. Track real-time progress. Transform community zones through direct collaborative governance metrics and gamified milestones.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
-                  <Link
-                    to="/report"
-                    className="magnetic-button w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center gap-2 text-sm transition-all active:scale-95 cursor-pointer"
-                  >
-                    <PlusCircle className="w-4.5 h-4.5" /> Report Issue
-                  </Link>
-                  <button
-                    onClick={() => document.getElementById("charts-command-center")?.scrollIntoView({ behavior: "smooth" })}
-                    className="w-full sm:w-auto px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-                  >
-                    <LayoutDashboard className="w-4.5 h-4.5 text-slate-400" /> Explore Dashboard
-                  </button>
-                </div>
-              </div>
-              <div
-                className="w-full lg:w-[480px] h-[320px] md:h-[380px] rounded-2xl overflow-hidden border border-white/10 bg-[#030510]/50 relative flex items-center justify-center"
-                style={{ transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0)` }}
-              >
-                <ThreeCity />
-              </div>
-            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

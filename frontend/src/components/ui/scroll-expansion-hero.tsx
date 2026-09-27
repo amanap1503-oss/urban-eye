@@ -5,10 +5,8 @@ import {
   useRef,
   useState,
   ReactNode,
-  TouchEvent,
-  WheelEvent,
 } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useMotionTemplate } from 'framer-motion';
 
 interface ScrollExpandMediaProps {
   mediaType?: 'video' | 'image';
@@ -33,10 +31,11 @@ const ScrollExpandMedia = ({
   textBlend,
   children,
 }: ScrollExpandMediaProps) => {
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [showContent, setShowContent] = useState<boolean>(false);
-  const [mediaFullyExpanded, setMediaFullyExpanded] = useState<boolean>(false);
+  const [, setMediaFullyExpanded] = useState<boolean>(false);
   const [isMobileState, setIsMobileState] = useState<boolean>(false);
+
+  const scrollProgress = useMotionValue(0);
 
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const targetProgressRef = useRef<number>(0);
@@ -49,10 +48,10 @@ const ScrollExpandMedia = ({
     targetProgressRef.current = 0;
     currentProgressRef.current = 0;
     isExpandedRef.current = false;
-    setScrollProgress(0);
+    scrollProgress.set(0);
     setShowContent(false);
     setMediaFullyExpanded(false);
-  }, [mediaType]);
+  }, [mediaType, scrollProgress]);
 
   // Smooth requestAnimationFrame lerp loop
   useEffect(() => {
@@ -66,10 +65,10 @@ const ScrollExpandMedia = ({
 
       // Smooth linear interpolation (lerp)
       const diff = target - current;
-      if (Math.abs(diff) > 0.0002) {
-        currentProgressRef.current = current + diff * 0.14; // smooth lerp factor
+      if (Math.abs(diff) > 0.0001) {
+        currentProgressRef.current = current + diff * 0.25; // Increased from 0.14 for snappier response
         const rounded = Math.round(currentProgressRef.current * 10000) / 10000;
-        setScrollProgress(rounded);
+        scrollProgress.set(rounded);
 
         if (rounded >= 0.98 && !isExpandedRef.current) {
           isExpandedRef.current = true;
@@ -91,7 +90,7 @@ const ScrollExpandMedia = ({
       active = false;
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  }, []);
+  }, [scrollProgress]);
 
   // Event Listeners attached ONCE without re-attaching churn
   useEffect(() => {
@@ -102,7 +101,7 @@ const ScrollExpandMedia = ({
         e.preventDefault();
       } else if (!isExpandedRef.current) {
         e.preventDefault();
-        const scrollDelta = e.deltaY * 0.0008;
+        const scrollDelta = e.deltaY * 0.0015; // Increased from 0.0008 for faster scrolling
         targetProgressRef.current = Math.min(
           Math.max(targetProgressRef.current + scrollDelta, 0),
           1
@@ -126,7 +125,7 @@ const ScrollExpandMedia = ({
         e.preventDefault();
       } else if (!isExpandedRef.current) {
         e.preventDefault();
-        const scrollFactor = deltaY < 0 ? 0.006 : 0.004;
+        const scrollFactor = deltaY < 0 ? 0.008 : 0.006;
         const scrollDelta = deltaY * scrollFactor;
         targetProgressRef.current = Math.min(
           Math.max(targetProgressRef.current + scrollDelta, 0),
@@ -171,17 +170,46 @@ const ScrollExpandMedia = ({
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
-  const mediaWidth = 300 + scrollProgress * (isMobileState ? 650 : 1250);
-  const mediaHeight = 400 + scrollProgress * (isMobileState ? 200 : 400);
-  const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
-
   const firstWord = title ? title.split(' ')[0] : '';
   const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
 
-  // Dynamic theme color parameters shifting across Eco-Environment spectrum: 135deg (lush emerald) -> 170deg (eco teal)
-  const currentHue = Math.round(135 + scrollProgress * 35);
-  const dynamicGlowColor = `hsla(${currentHue}, 85%, 45%, ${0.4 + scrollProgress * 0.25})`;
-  const dynamicBorderColor = `hsla(${currentHue}, 80%, 45%, ${0.35 + scrollProgress * 0.35})`;
+  // Calculate max dimensions
+  const mediaMaxWidth = isMobileState ? 950 : 1550;
+  const mediaMaxHeight = isMobileState ? 600 : 800;
+  const initialWidth = 300;
+  const initialHeight = 400;
+
+  // Clip path insets for GPU accelerated expansion
+  const xInset = useTransform(scrollProgress, [0, 1], [(mediaMaxWidth - initialWidth) / 2, 0]);
+  const yInset = useTransform(scrollProgress, [0, 1], [(mediaMaxHeight - initialHeight) / 2, 0]);
+  const clipPath = useMotionTemplate`inset(${yInset}px ${xInset}px round 16px)`;
+
+  // Glow scale values
+  const glowScaleX = useTransform(scrollProgress, [0, 1], [initialWidth / mediaMaxWidth, 1]);
+  const glowScaleY = useTransform(scrollProgress, [0, 1], [initialHeight / mediaMaxHeight, 1]);
+
+  const textTranslateX = useTransform(scrollProgress, [0, 1], [0, isMobileState ? 180 : 150]);
+  const textTranslateXNegative = useTransform(scrollProgress, [0, 1], [0, -(isMobileState ? 180 : 150)]);
+  
+  const currentHue = useTransform(scrollProgress, [0, 1], [135, 170]);
+  const huePlus25 = useTransform(currentHue, h => h + 25);
+  const huePlus30 = useTransform(currentHue, h => h + 30);
+  
+  const dynamicGlowColor = useMotionTemplate`hsla(${currentHue}, 85%, 45%, ${useTransform(scrollProgress, [0, 1], [0.4, 0.65])})`;
+  const dynamicBorderColor = useMotionTemplate`hsla(${currentHue}, 80%, 45%, ${useTransform(scrollProgress, [0, 1], [0.35, 0.7])})`;
+  
+  const shadow1Size = useTransform(scrollProgress, [0, 1], [45, 90]);
+  const shadow2Size = useTransform(scrollProgress, [0, 1], [95, 150]);
+  const boxShadow = useMotionTemplate`0px 0px ${shadow1Size}px ${dynamicGlowColor}, 0px 0px ${shadow2Size}px hsla(${currentHue}, 75%, 35%, 0.3)`;
+  
+  const bgImageOpacity = useTransform(scrollProgress, [0, 1], [0.75, 0.4]);
+  const mediaOverlayOpacity = useTransform(scrollProgress, [0, 1], [0.5, 0.2]);
+
+  const bgRadial = useMotionTemplate`radial-gradient(circle at 50% 25%, hsla(${currentHue}, 75%, 10%, 0.85) 0%, hsla(${huePlus25}, 80%, 5%, 0.96) 55%, #030a08 100%)`;
+  const bgLinear = useMotionTemplate`linear-gradient(180deg, hsla(${currentHue}, 80%, 8%, 0.35) 0%, hsla(${huePlus30}, 75%, 4%, 0.75) 70%, #030a08 100%)`;
+
+  const dateColor = useMotionTemplate`hsla(${currentHue}, 90%, 75%, 1)`;
+  const titleFilter = useMotionTemplate`drop-shadow(0 0 25px hsla(${currentHue}, 85%, 45%, 0.75))`;
 
   return (
     <div
@@ -192,27 +220,25 @@ const ScrollExpandMedia = ({
         <div className='relative w-full flex flex-col items-center min-h-[100dvh]'>
           <motion.div
             className='absolute inset-0 z-0 w-full h-full transition-all duration-300'
-            style={{
-              background: `radial-gradient(circle at 50% 25%, hsla(${currentHue}, 75%, 10%, 0.85) 0%, hsla(${currentHue + 25}, 80%, 5%, 0.96) 55%, #030a08 100%)`,
-            }}
+            style={{ background: bgRadial }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.1 }}
           >
-            <img
+            <motion.img
               src={bgImageSrc}
               alt='Background'
               className='w-full h-full object-cover object-center transition-opacity duration-500'
-              style={{ opacity: 0.75 - scrollProgress * 0.35 }}
+              style={{ opacity: bgImageOpacity }}
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
             {/* Dynamic Eco Color Tint Overlay */}
-            <div
+            <motion.div
               className='absolute inset-0 transition-colors duration-500'
               style={{
-                background: `linear-gradient(180deg, hsla(${currentHue}, 80%, 8%, 0.35) 0%, hsla(${currentHue + 30}, 75%, 4%, 0.75) 70%, #030a08 100%)`,
+                background: bgLinear,
                 backdropFilter: 'blur(2px)',
               }}
             />
@@ -220,16 +246,35 @@ const ScrollExpandMedia = ({
 
           <div className='w-full flex flex-col items-center justify-start relative z-10'>
             <div className='flex flex-col items-center justify-center w-full h-[100dvh] relative'>
-              <div
-                className='absolute z-0 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-2xl border overflow-hidden'
+              
+              {/* GPU-Accelerated Glow Container */}
+              <motion.div
+                className='absolute z-0 top-1/2 left-1/2 rounded-2xl border'
                 style={{
-                  width: `${mediaWidth}px`,
-                  height: `${mediaHeight}px`,
+                  width: `${mediaMaxWidth}px`,
+                  height: `${mediaMaxHeight}px`,
                   maxWidth: '95vw',
                   maxHeight: '85vh',
+                  x: '-50%',
+                  y: '-50%',
+                  scaleX: glowScaleX,
+                  scaleY: glowScaleY,
                   borderColor: dynamicBorderColor,
-                  boxShadow: `0px 0px ${45 + scrollProgress * 45}px ${dynamicGlowColor}, 0px 0px ${95 + scrollProgress * 55}px hsla(${currentHue}, 75%, 35%, 0.3)`,
-                  willChange: 'width, height, transform',
+                  boxShadow: boxShadow,
+                  willChange: 'transform',
+                }}
+              />
+
+              {/* Main Media Container with clip-path */}
+              <motion.div
+                className='absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 overflow-hidden'
+                style={{
+                  width: `${mediaMaxWidth}px`,
+                  height: `${mediaMaxHeight}px`,
+                  maxWidth: '95vw',
+                  maxHeight: '85vh',
+                  clipPath: clipPath,
+                  willChange: 'clip-path',
                 }}
               >
                 {mediaType === 'video' ? (
@@ -247,7 +292,7 @@ const ScrollExpandMedia = ({
                               '?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&playlist=' +
                               mediaSrc.split('v=')[1]
                         }
-                        className='w-full h-full rounded-xl'
+                        className='w-full h-full'
                         frameBorder='0'
                         allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
                         allowFullScreen
@@ -258,10 +303,8 @@ const ScrollExpandMedia = ({
                       ></div>
 
                       <motion.div
-                        className='absolute inset-0 bg-slate-950/40 rounded-xl'
-                        initial={{ opacity: 0.7 }}
-                        animate={{ opacity: 0.5 - scrollProgress * 0.3 }}
-                        transition={{ duration: 0.2 }}
+                        className='absolute inset-0 bg-slate-950/40'
+                        style={{ opacity: mediaOverlayOpacity }}
                       />
                     </div>
                   ) : (
@@ -274,7 +317,7 @@ const ScrollExpandMedia = ({
                         loop
                         playsInline
                         preload='auto'
-                        className='w-full h-full object-cover rounded-xl'
+                        className='w-full h-full object-cover'
                         controls={false}
                         disablePictureInPicture
                         disableRemotePlayback
@@ -285,10 +328,8 @@ const ScrollExpandMedia = ({
                       ></div>
 
                       <motion.div
-                        className='absolute inset-0 bg-slate-950/40 rounded-xl'
-                        initial={{ opacity: 0.7 }}
-                        animate={{ opacity: 0.5 - scrollProgress * 0.3 }}
-                        transition={{ duration: 0.2 }}
+                        className='absolute inset-0 bg-slate-950/40'
+                        style={{ opacity: mediaOverlayOpacity }}
                       />
                     </div>
                   )
@@ -297,54 +338,52 @@ const ScrollExpandMedia = ({
                     <img
                       src={mediaSrc}
                       alt={title || 'Media content'}
-                      className='w-full h-full object-cover rounded-xl'
+                      className='w-full h-full object-cover'
                     />
 
                     <motion.div
-                      className='absolute inset-0 bg-slate-950/50 rounded-xl'
-                      initial={{ opacity: 0.7 }}
-                      animate={{ opacity: 0.7 - scrollProgress * 0.3 }}
-                      transition={{ duration: 0.2 }}
+                      className='absolute inset-0 bg-slate-950/50'
+                      style={{ opacity: mediaOverlayOpacity }}
                     />
                   </div>
                 )}
+              </motion.div>
 
-                <div className='flex flex-col items-center text-center relative z-10 mt-4 transition-none px-4'>
-                  {date && (
-                    <p
-                      className='text-xs font-mono font-semibold uppercase tracking-widest bg-emerald-950/90 backdrop-blur-md px-3.5 py-1 rounded-full border shadow-lg transition-all duration-300'
-                      style={{
-                        transform: `translateX(-${textTranslateX}vw)`,
-                        color: `hsla(${currentHue}, 90%, 75%, 1)`,
-                        borderColor: dynamicBorderColor,
-                        boxShadow: `0 0 20px ${dynamicGlowColor}`,
-                      }}
-                    >
-                      {date}
-                    </p>
-                  )}
-                  {scrollToExpand && (
-                    <p
-                      className='text-emerald-100 font-mono text-xs uppercase tracking-wider mt-2 bg-emerald-950/60 backdrop-blur-sm px-2.5 py-0.5 rounded-md border border-emerald-500/20'
-                      style={{ transform: `translateX(${textTranslateX}vw)` }}
-                    >
-                      {scrollToExpand}
-                    </p>
-                  )}
-                </div>
+              <div className='flex flex-col items-center text-center relative z-20 mt-4 transition-none px-4 pointer-events-none'>
+                {date && (
+                  <motion.p
+                    className='text-xs font-mono font-semibold uppercase tracking-widest bg-emerald-950/90 backdrop-blur-md px-3.5 py-1 rounded-full border shadow-lg transition-all duration-300'
+                    style={{
+                      x: textTranslateXNegative,
+                      color: dateColor,
+                      borderColor: dynamicBorderColor,
+                      boxShadow: useMotionTemplate`0 0 20px ${dynamicGlowColor}`,
+                    }}
+                  >
+                    {date}
+                  </motion.p>
+                )}
+                {scrollToExpand && (
+                  <motion.p
+                    className='text-emerald-100 font-mono text-xs uppercase tracking-wider mt-2 bg-emerald-950/60 backdrop-blur-sm px-2.5 py-0.5 rounded-md border border-emerald-500/20'
+                    style={{ x: textTranslateX }}
+                  >
+                    {scrollToExpand}
+                  </motion.p>
+                )}
               </div>
 
               <div
-                className={`flex items-center justify-center text-center gap-2 w-full relative z-10 transition-none flex-col ${
+                className={`flex items-center justify-center text-center gap-2 w-full relative z-30 transition-none flex-col pointer-events-none ${
                   textBlend ? 'mix-blend-difference' : 'mix-blend-normal'
                 }`}
               >
                 <motion.h2
                   className='text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-green-300 to-teal-200'
                   style={{
-                    transform: `translate3d(-${textTranslateX}vw, 0, 0)`,
+                    x: textTranslateXNegative,
                     willChange: 'transform',
-                    filter: `drop-shadow(0 0 25px hsla(${currentHue}, 85%, 45%, 0.75))`,
+                    filter: titleFilter,
                   }}
                 >
                   {firstWord}
@@ -352,9 +391,9 @@ const ScrollExpandMedia = ({
                 <motion.h2
                   className='text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-200'
                   style={{
-                    transform: `translate3d(${textTranslateX}vw, 0, 0)`,
+                    x: textTranslateX,
                     willChange: 'transform',
-                    filter: `drop-shadow(0 0 25px hsla(${currentHue}, 85%, 45%, 0.75))`,
+                    filter: titleFilter,
                   }}
                 >
                   {restOfTitle}
@@ -378,3 +417,4 @@ const ScrollExpandMedia = ({
 };
 
 export default ScrollExpandMedia;
+
