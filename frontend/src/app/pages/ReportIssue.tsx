@@ -593,10 +593,7 @@ export default function ReportIssue() {
               {t("btn_next")} <ChevronRight size={16} />
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all shadow-[0_0_16px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed">
-              <Send size={14} /> {isSubmitting ? t("btn_submitting") : t("btn_submit")}
-            </button>
+            <div className="w-[100px]"></div> /* Placeholder to keep back button on left */
           )}
         </div>
       </div>

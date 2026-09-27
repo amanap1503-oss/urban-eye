@@ -82,11 +82,14 @@ def run_yolo_detection(image_bytes: bytes, category: str) -> list:
     if category == "Safety":
         specialized_model_name = "hemletYoloV8_100epochs.pt"
         specialized_class_mapping = {0: "unprotected head", 1: "helmet (safety gear)", 2: "person"}
-    elif category in ["Environment", "Public Spaces"]:
-        specialized_model_name = "best_model.pt"
+    elif category in ["Environment", "Public Spaces", "Sanitation", "Sanitation & Bio-Hazard"]:
+        # YOLOv8m segmentation model — 5-class garbage detector (Glass/Metal/Paper/Plastic/Waste)
+        specialized_model_name = "yolov8m-seg-garbage.pt"
         specialized_class_mapping = {
-            0: "Glass waste", 1: "Metal waste",
-            2: "Paper waste", 3: "Plastic waste",
+            0: "Glass waste",
+            1: "Metal waste",
+            2: "Paper waste",
+            3: "Plastic waste",
             4: "General Waste/Garbage"
         }
     elif category in ["Utilities", "Infrastructure"]:
@@ -98,24 +101,51 @@ def run_yolo_detection(image_bytes: bytes, category: str) -> list:
 
     specialized_detections = []
     specialized_results = None
+    is_seg_model = specialized_model_name and "seg" in specialized_model_name
+
     if specialized_model_name:
         model = get_yolo_model(specialized_model_name)
         if model:
             try:
                 specialized_results = model(image, verbose=False)
                 for result in specialized_results:
-                    for box in result.boxes:
-                        cls_id = int(box.cls[0].item())
-                        conf = float(box.conf[0].item())
-                        if conf >= CONFIDENCE_THRESHOLD:          # ← filter false positives
-                            cls_name = specialized_class_mapping.get(
-                                cls_id, result.names.get(cls_id, f"Class {cls_id}")
-                            )
-                            specialized_detections.append({"class": cls_name, "confidence": conf, "source": "specialized"})
+                    if is_seg_model:
+                        # ── Segmentation model: read from masks + boxes ──────────
+                        boxes = result.boxes
+                        masks = result.masks  # may be None if no detections
+                        if boxes is not None:
+                            for i, box in enumerate(boxes):
+                                cls_id = int(box.cls[0].item())
+                                conf = float(box.conf[0].item())
+                                if conf >= CONFIDENCE_THRESHOLD:
+                                    cls_name = specialized_class_mapping.get(
+                                        cls_id, result.names.get(cls_id, f"Class {cls_id}")
+                                    )
+                                    det = {"class": cls_name, "confidence": conf, "source": "specialized"}
+                                    # Attach mask pixel-area if masks are available
+                                    if masks is not None and i < len(masks):
+                                        try:
+                                            import numpy as np
+                                            mask_arr = masks[i].data.cpu().numpy()
+                                            det["mask_area_px"] = int(mask_arr.sum())
+                                        except Exception:
+                                            pass
+                                    specialized_detections.append(det)
+                    else:
+                        # ── Standard detection model: read from boxes only ───────
+                        for box in result.boxes:
+                            cls_id = int(box.cls[0].item())
+                            conf = float(box.conf[0].item())
+                            if conf >= CONFIDENCE_THRESHOLD:
+                                cls_name = specialized_class_mapping.get(
+                                    cls_id, result.names.get(cls_id, f"Class {cls_id}")
+                                )
+                                specialized_detections.append({"class": cls_name, "confidence": conf, "source": "specialized"})
+
                 if specialized_detections:
-                    print(f"[YOLO] Specialized model ({specialized_model_name}) found {len(specialized_detections)} detections above {CONFIDENCE_THRESHOLD*100:.0f}% threshold")
+                    print(f"[YOLO] {'Seg' if is_seg_model else 'Det'} model ({specialized_model_name}) found {len(specialized_detections)} detections above {CONFIDENCE_THRESHOLD*100:.0f}% threshold")
                 else:
-                    print(f"[YOLO] Specialized model ({specialized_model_name}) found nothing above {CONFIDENCE_THRESHOLD*100:.0f}% confidence. Falling back to general model.")
+                    print(f"[YOLO] Model ({specialized_model_name}) found nothing above {CONFIDENCE_THRESHOLD*100:.0f}% confidence. Falling back to general model.")
             except Exception as e:
                 print(f"[YOLO Error] Specialized model failed: {e}")
 

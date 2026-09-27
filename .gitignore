@@ -7,4 +7,7 @@ backend/.env
 backend/check_models.py
 backend/test_gemini.py
 __pycache__/
-*.pyc
+*.pyc
+backend/uploads/
+venv/
+backend/venv/

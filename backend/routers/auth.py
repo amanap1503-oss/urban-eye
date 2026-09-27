@@ -2,24 +2,47 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from database import get_db
-from models import DBUser, DBNotification
+from models import DBUser, DBNotification, DBIssue
 from schemas import UserRegisterSchema, UserLoginSchema, AdminLoginSchema, UserProfileUpdateSchema
 
 router = APIRouter(prefix="/auth", tags=["Auth & Users"])
 
 @router.post("/register")
 async def register_user(payload: UserRegisterSchema, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DBUser).where(DBUser.email == payload.email))
-    existing = result.scalars().first()
+    # Look up by uid first, fall back to email
+    existing = None
+    if payload.uid:
+        result = await db.execute(select(DBUser).where(DBUser.uid == payload.uid))
+        existing = result.scalars().first()
+    if not existing and payload.email:
+        result = await db.execute(select(DBUser).where(DBUser.email == payload.email))
+        existing = result.scalars().first()
+
     if existing:
+        # Count this user's issues
+        filed_result = await db.execute(
+            select(func.count()).select_from(DBIssue).where(DBIssue.reporter_id == existing.uid)
+        )
+        reports_filed = filed_result.scalar() or 0
+        resolved_result = await db.execute(
+            select(func.count()).select_from(DBIssue).where(
+                DBIssue.reporter_id == existing.uid,
+                DBIssue.status.in_(["resolved", "Resolved"])
+            )
+        )
+        reports_resolved = resolved_result.scalar() or 0
+
         return {
             "uid": existing.uid or existing.id,
             "name": existing.name,
             "email": existing.email,
             "role": existing.role,
             "points": existing.points,
-            "city": existing.city
+            "city": existing.city,
+            "reportsFiled": reports_filed,
+            "reportsResolved": reports_resolved,
         }
 
     uid = payload.uid or f"usr-{payload.email.replace('@', '-').replace('.', '-')}"
@@ -41,7 +64,9 @@ async def register_user(payload: UserRegisterSchema, db: AsyncSession = Depends(
         "email": new_user.email,
         "role": new_user.role,
         "points": new_user.points,
-        "city": new_user.city
+        "city": new_user.city,
+        "reportsFiled": 0,
+        "reportsResolved": 0,
     }
 
 @router.post("/login")

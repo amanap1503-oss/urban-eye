@@ -990,8 +990,8 @@ export default function Profile() {
   const resolved = myIssues.filter(i => i.status === "resolved");
   const inProgress = myIssues.filter(i => i.status === "in_progress");
 
-  const reportsFiled = user.reportsFiled ?? myIssues.length;
-  const reportsResolved = user.reportsResolved ?? resolved.length;
+  const reportsFiled = myIssues.length;
+  const reportsResolved = resolved.length;
   const maxUpvotes = myIssues.reduce((max, i) => Math.max(max, i.votes || 0), 0);
 
   // Compute live badge progress/unlock state from the user's actual stats

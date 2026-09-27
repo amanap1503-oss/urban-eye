@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, CheckCircle2, Clock, MapPin, Camera, Users, Shield, ThumbsUp, Cpu } from "lucide-react";
+import { X, CheckCircle2, Clock, MapPin, Camera, Users, Shield, ThumbsUp, Cpu, ChevronDown, ChevronUp } from "lucide-react";
 import { Issue } from "../data/mockData";
 import { useApp } from "../context/AppContext";
 import AIReportModal from "./AIReportModal";
@@ -145,6 +145,7 @@ function formatTime(iso: string | null) {
 export function IssueTracker({ issue, compact = false }: { issue: Issue; compact?: boolean }) {
   const { approveResolution } = useApp();
   const [showAiReport, setShowAiReport] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const overallPercent = Math.round(
     (STEPS.filter(s => getStepStatus(issue, s.id) === "done").length / STEPS.length) * 100
@@ -233,10 +234,34 @@ export function IssueTracker({ issue, compact = false }: { issue: Issue; compact
             }}
           />
         </div>
-        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "5px 0 0", textAlign: "right" }}>{overallPercent}% complete</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: 0 }}>{overallPercent}% complete</p>
+          <button
+            onClick={() => setIsExpanded(p => !p)}
+            style={{
+              display: "flex", alignItems: "center", gap: 4,
+              background: isExpanded ? "rgba(59,130,246,0.12)" : "rgba(255,255,255,0.05)",
+              border: isExpanded ? "1px solid rgba(59,130,246,0.3)" : "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8, color: isExpanded ? "#93c5fd" : "rgba(255,255,255,0.4)",
+              fontSize: 10, fontWeight: 600, padding: "3px 9px", cursor: "pointer", transition: "all 0.2s",
+            }}
+          >
+            {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+            {isExpanded ? "Hide Tracker" : "Show Live Tracker"}
+          </button>
+        </div>
       </div>
 
-      {/* Steps timeline */}
+      {/* Steps timeline — collapsible */}
+      <AnimatePresence initial={false}>
+      {isExpanded && (
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: "auto", opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        style={{ overflow: "hidden" }}
+      >
       <div style={{ padding: compact ? "12px 18px" : "16px 22px", display: "flex", flexDirection: "column", gap: 0 }}>
         {STEPS.map((step, idx) => {
           const status = getStepStatus(issue, step.id);
@@ -361,6 +386,9 @@ export function IssueTracker({ issue, compact = false }: { issue: Issue; compact
           );
         })}
       </div>
+      </motion.div>
+      )}
+      </AnimatePresence>
       {showAiReport && (
         <AIReportModal
           issueId={issue.id}

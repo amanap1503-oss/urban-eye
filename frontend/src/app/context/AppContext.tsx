@@ -7,7 +7,7 @@ import { getOrCreateUserProfile, UserProfile, updateUserProfile } from "../lib/u
 import { logActivity, subscribeToActivities, UserActivity } from "../lib/activityService";
 import { Issue, ISSUES, INITIAL_CITY_ROSTERS } from "../data/mockData";
 import { CityRosterOfficer } from "../lib/aiAnalyzerService";
-import { apiClient } from "../lib/apiClient";
+import { apiClient, API_BASE } from "../lib/apiClient";
 import { realtimeWS } from "../lib/wsClient";
 import { LanguageCode, getTranslation } from "../lib/i18n";
 
@@ -190,8 +190,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               email: fbUser.email,
               city: "Mumbai"
             });
-            if (dbRes && typeof dbRes.points === "number") {
-              setUser(u => u ? { ...u, points: dbRes.points } : u);
+            if (dbRes) {
+              setUser(u => u ? {
+                ...u,
+                points: typeof dbRes.points === "number" ? dbRes.points : u.points,
+                reportsFiled: typeof dbRes.reportsFiled === "number" ? dbRes.reportsFiled : u.reportsFiled,
+                reportsResolved: typeof dbRes.reportsResolved === "number" ? dbRes.reportsResolved : u.reportsResolved,
+              } : u);
             }
           } catch (e) {
             console.warn("Backend user registration sync:", e);
@@ -250,7 +255,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       comments: raw.comments ?? 0,
       reportedBy: raw.reportedBy || raw.reporterId || "",
       reportedAt: raw.reportedAt || raw.createdAt || new Date().toISOString(),
-      image: raw.imageUrl || raw.image || undefined,
+      image: (raw.imageUrl || raw.image || "").startsWith("/uploads") 
+        ? `${API_BASE}${raw.imageUrl || raw.image}` 
+        : (raw.imageUrl || raw.image || undefined),
       tags: raw.tags || [],
       aiPriorityScore: raw.aiScore,
       aiPriorityLevel: raw.priorityLevel,
@@ -274,9 +281,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async function loadBackendIssues() {
       try {
         const fetched = await apiClient.get("/issues");
-        if (Array.isArray(fetched)) {
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          // Backend has real data — use it
           setIssues(fetched.map(normalizeIssue));
         }
+        // If backend returns empty array (fresh/empty DB), keep mock data as fallback
       } catch (e) {
         console.warn("Python FastAPI backend offline or unreachable, using local fallback issues:", e);
       }
@@ -660,6 +669,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn("Backend error adding issue:", err);
       pendingTempIds.current.delete(tempId);
+      // Rollback the optimistic UI update
+      setIssues(prev => prev.filter(i => i.id !== tempId));
+      throw err;
     }
   }
 
