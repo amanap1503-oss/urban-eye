@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import {
-  MapPin, Camera, FileText, Eye, Send, CheckCircle2,
+  MapPin, Camera, FileText, Send, CheckCircle2, Eye,
   ChevronRight, ChevronLeft, X, Upload, AlertTriangle,
   Building2, Trees, Droplets, Car, PlayCircle,
   Navigation, ZoomIn, ZoomOut, Search
@@ -17,8 +17,7 @@ const STEPS = [
   { id: 1, key: "step_1", defaultTitle: "Issue Details", icon: FileText },
   { id: 2, key: "step_2", defaultTitle: "Location", icon: MapPin },
   { id: 3, key: "step_3", defaultTitle: "Photos", icon: Camera },
-  { id: 4, key: "step_4", defaultTitle: "Preview", icon: Eye },
-  { id: 5, key: "step_5", defaultTitle: "Submit", icon: Send },
+  { id: 4, key: "step_4", defaultTitle: "Preview & Submit", icon: Send },
 ];
 
 const CATEGORIES: { value: IssueCategory; key: string; defaultLabel: string; icon: typeof Building2; color: string }[] = [
@@ -532,22 +531,34 @@ export default function ReportIssue() {
             </div>
           )}
 
-          {/* Step 4 — Preview */}
+          {/* Step 4 — Preview & Submit */}
           {step === 4 && (
             <div className="space-y-5">
-              <h2 className="text-lg font-semibold">Review Your Report</h2>
-              <div className="rounded-xl border border-white/10 bg-white/3 overflow-hidden">
-                {(uploadedImage || form.image) && <img src={uploadedImage || form.image} alt="" className="w-full h-40 object-cover" />}
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-white">{form.title}</h3>
-                  <p className="text-sm text-slate-400">{form.description}</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Eye size={16} className="text-blue-400" />
+                <h2 className="text-base font-semibold text-white">Review Your Report</h2>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                {(uploadedImage || form.image) && (
+                  <img src={uploadedImage || form.image} alt="" className="w-full h-44 object-cover" />
+                )}
+                <div className="p-5 space-y-3">
+                  <h3 className="font-bold text-white text-lg">{form.title}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">{form.description}</p>
                   <div className="flex flex-wrap gap-2">
-                    {form.category && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-500/15 text-blue-300 border border-blue-500/20">{form.category}</span>}
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-500/20 capitalize">{form.priority} priority</span>
+                    {form.category && (
+                      <span className="px-2.5 py-1 rounded-full text-xs bg-blue-500/15 text-blue-300 border border-blue-500/20 font-medium">
+                        {form.category}
+                      </span>
+                    )}
+                    <span className="px-2.5 py-1 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-500/20 capitalize font-medium">
+                      {form.priority} Priority
+                    </span>
                   </div>
                   {form.location && (
                     <div className="flex items-start gap-2 text-xs text-slate-400">
-                      <MapPin size={10} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                      <MapPin size={12} className="text-blue-400 mt-0.5 flex-shrink-0" />
                       <span className="leading-relaxed">{form.location}</span>
                     </div>
                   )}
@@ -557,6 +568,14 @@ export default function ReportIssue() {
                 </div>
               </div>
 
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              >
+                <Send size={15} />
+                {isSubmitting ? t("btn_submitting") : "Submit Report"}
+              </button>
             </div>
           )}
         </motion.div>

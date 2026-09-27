@@ -318,15 +318,15 @@ export default function Navbar() {
                       alt={displayName}
                       className="w-7 h-7 rounded-lg object-cover border border-white/20"
                     />
-                  <div className="hidden lg:block text-left">
-                    <p className="text-xs font-medium text-white leading-none">{displayName.split(" ")[0]}</p>
-                    {isAdmin ? (
-                      <p className="text-[10px] text-purple-400 mt-0.5 font-semibold">🛡️ City Admin</p>
-                    ) : (
-                      <p className="text-[10px] text-blue-400 mt-0.5">{displayPoints.toLocaleString()} pts</p>
-                    )}
-                  </div>
-                  <ChevronDown
+                    <div className="hidden lg:block text-left">
+                      <p className="text-xs font-medium text-white leading-none">{displayName.split(" ")[0]}</p>
+                      {isAdmin ? (
+                        <p className="text-[10px] text-purple-400 mt-0.5 font-semibold">🛡️ City Admin</p>
+                      ) : (
+                        <p className="text-[10px] text-blue-400 mt-0.5">{displayPoints.toLocaleString()} pts</p>
+                      )}
+                    </div>
+                    <ChevronDown
                     size={12}
                     className={`text-slate-400 hidden lg:block transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
                   />
