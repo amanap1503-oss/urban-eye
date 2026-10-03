@@ -22,6 +22,19 @@
     }
   </style>
 
+  <!-- Restore the persisted theme before first paint (no flash on refresh) -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("urbanEyeTheme") === "blue-steel") {
+          document.documentElement.classList.add("theme-blue-steel");
+        }
+        var lang = localStorage.getItem("urbanEyeLanguage");
+        if (lang) document.documentElement.lang = lang;
+      } catch (e) {}
+    })();
+  </script>
+
 </head>
 
 <body>

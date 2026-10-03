@@ -234,7 +234,7 @@ function EditIssueModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b1020] shadow-2xl overflow-hidden"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0b1020] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
@@ -539,7 +539,7 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-5 overflow-y-auto">
           {error && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
               <AlertTriangle size={13} />
@@ -547,44 +547,62 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          <div className="flex items-center gap-3">
+          {/* Avatar preview — centered, so it never competes with the field labels */}
+          <div className="flex flex-col items-center">
             <img
               src={
                 photoURL ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "Citizen")}&background=1E6BE6&color=fff&size=100`
               }
               alt=""
-              className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 flex-shrink-0"
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).src =
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "Citizen")}&background=1E6BE6&color=fff&size=100`;
+              }}
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-white/10 shadow-[0_0_20px_rgba(59,130,246,0.2)]"
             />
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
-                Photo URL
-              </label>
-              <input
-                type="text"
-                value={photoURL}
-                onChange={e => setPhotoURL(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-500"
-              />
-            </div>
+            <p className="text-[10px] text-slate-500 mt-2">Profile picture preview</p>
           </div>
 
+          {/* Display Name */}
           <div>
-            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+            <label
+              htmlFor="profile-name"
+              className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5"
+            >
               Display Name
             </label>
             <input
+              id="profile-name"
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
+              placeholder="Your name"
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-500"
+            />
+          </div>
+
+          {/* Photo URL */}
+          <div>
+            <label
+              htmlFor="profile-photo"
+              className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5"
+            >
+              Photo URL
+            </label>
+            <input
+              id="profile-photo"
+              type="text"
+              value={photoURL}
+              onChange={e => setPhotoURL(e.target.value)}
+              placeholder="https://..."
               className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50 transition-all placeholder-slate-500"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex gap-3">
+        <div className="px-5 py-4 border-t border-white/8 flex gap-3">
           <button
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/4 text-sm text-slate-300 hover:text-white transition-all"
@@ -856,7 +874,7 @@ export default function Profile() {
                   </span>
                 </div>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 8px" }}>{user.email}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", gap: 5 }}>
                     🏛️ {user.ward || "City Command HQ"}
                   </span>
@@ -881,7 +899,7 @@ export default function Profile() {
           </div>
 
           {/* Admin Stats Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: "1.5rem" }}>
             {[
               { label: "Total Issues", value: issues.length, icon: "📋", color: "#60a5fa" },
               { label: "Assigned", value: assignedIssues.length, icon: "👮", color: "#34d399" },
@@ -950,7 +968,7 @@ export default function Profile() {
           </div>
 
           {/* Quick Links */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <a href="/admin" style={{
               display: "flex", alignItems: "center", gap: 12, padding: "16px 20px",
               background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)",
@@ -984,8 +1002,14 @@ export default function Profile() {
     `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1E6BE6&color=fff&size=100`;
 
 
+  // Match on every identifier the backend may populate so a freshly submitted
+  // report shows up immediately (mirrors the filter used in Rewards.tsx).
   const myIssues = issues.filter(
-    i => i.reportedBy === user.uid || i.reportedBy === user.name
+    i =>
+      i.reportedBy === user.uid ||
+      i.reportedBy === user.name ||
+      (i as any).reporterId === user.uid ||
+      (i as any).reporterName === user.name
   );
   const resolved = myIssues.filter(i => i.status === "resolved");
   const inProgress = myIssues.filter(i => i.status === "in_progress");
@@ -1129,7 +1153,7 @@ export default function Profile() {
 
           {/* Profile info */}
           <div className="bg-[rgba(11,16,32,0.95)] px-6 pt-0 pb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-10 sm:-mt-12 mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 -mt-10 sm:-mt-12 mb-4">
               <div className="relative">
                 <img
                   src={avatarUrl}
@@ -1146,7 +1170,7 @@ export default function Profile() {
 
               <div className="flex-1 min-w-0 pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-white">{user.name}</h1>
+                  <h1 className="text-2xl font-bold text-white truncate max-w-full">{user.name}</h1>
                   <Shield size={14} className="text-blue-400" />
                 </div>
                 <p className="text-sm font-semibold mt-0.5" style={{ color: currentTier.color }}>
@@ -1162,25 +1186,25 @@ export default function Profile() {
                     })}
                   </div>
                   <div className="flex items-center gap-1">
-                    <MapPin size={11} /> {user.ward}
+                    <MapPin size={11} /> {user.ward || "City-wide"}
                   </div>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">{user.email}</p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto sm:flex-shrink-0">
                 <button
                   onClick={async () => {
                     await logout();
                     navigate("/", { replace: true });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/15 transition-all"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/15 transition-all"
                 >
                   Sign Out
                 </button>
                 <button
                   onClick={() => setEditProfileOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 bg-white/5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-white/15 bg-white/5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
                 >
                   <Edit3 size={13} /> Edit Profile
                 </button>

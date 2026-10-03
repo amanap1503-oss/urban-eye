@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, Bell, ChevronDown, Zap, LogOut, CheckCheck, Trash2, Globe } from "lucide-react";
+import { Menu, X, Bell, ChevronDown, Zap, LogOut, CheckCheck, Trash2, Globe, Sun, Moon } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { LANGUAGES, LanguageCode } from "../lib/i18n";
+import { LANGUAGES, LanguageCode, getThemeLabel } from "../lib/i18n";
 
 const NAV_LINKS = [
   { labelKey: "nav_dashboard", defaultLabel: "Dashboard", href: "/dashboard" },
@@ -39,6 +39,7 @@ export default function Navbar() {
   const {
     user, issues, logout,
     language, setLanguage, t,
+    theme, toggleTheme,
     notifications = [], markNotificationAsRead, markAllNotificationsAsRead, clearNotifications
   } = useApp();
   const newIssues = issues.filter((i) => i.status === "new").length;
@@ -197,6 +198,30 @@ export default function Navbar() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Theme Switcher — Dark / Light */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={toggleTheme}
+                  data-i18n-skip
+                  title={getThemeLabel(language, theme === "blue-steel" ? "light" : "dark")}
+                  aria-label={getThemeLabel(language, theme === "blue-steel" ? "light" : "dark")}
+                  className="relative w-[34px] h-[34px] rounded-xl border border-transparent hover:border-white/10 bg-transparent hover:bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={theme}
+                      initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
+                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                      exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center justify-center"
+                    >
+                      {theme === "blue-steel" ? <Moon size={15} /> : <Sun size={15} />}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.button>
 
                 <div className="w-[1px] h-4 bg-white/10 hidden sm:block"></div>
 

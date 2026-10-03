@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.future import select
 
-from database import engine, Base, AsyncSessionLocal, init_postgres_db
+from database import engine, Base, AsyncSessionLocal, init_postgres_db, IS_SQLITE
 from models import DBIssue, DBUser, DBNotification
 from routers import auth, issues
 from services.websocket_manager import ws_manager
@@ -20,20 +20,33 @@ async def lifespan(app: FastAPI):
     await init_postgres_db()
 
     # Initialize PostgreSQL tables & migrate missing columns
-    print("[PostgreSQL] Creating database tables & verifying schema...")
+    print("[Database] Creating database tables & verifying schema...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Auto-migrate columns added after initial deployment
-        from sqlalchemy import text
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS yolo_detections JSONB DEFAULT '[]'::jsonb;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS ai_full_report TEXT;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS ai_annotated_image_url VARCHAR;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS site_arrival_proof JSON;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS resolution_proof JSON;"))
-        await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS voice_recording_url TEXT;"))
-    print("[PostgreSQL] Tables & columns verified.")
+        if not IS_SQLITE:
+            # Auto-migrate columns added after initial deployment (PostgreSQL only;
+            # SQLite is fully covered by create_all above).
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS yolo_detections JSONB DEFAULT '[]'::jsonb;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS ai_full_report TEXT;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS ai_annotated_image_url VARCHAR;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS site_arrival_proof JSON;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS resolution_proof JSON;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS voice_recording_url TEXT;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS priority_level VARCHAR;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS sla_deadline TIMESTAMP;"))
+            await conn.execute(text("ALTER TABLE issues ADD COLUMN IF NOT EXISTS escalated BOOLEAN DEFAULT FALSE;"))
+            # Backfill AI priority level for pre-existing rows
+            await conn.execute(text("UPDATE issues SET priority_level = priority WHERE priority_level IS NULL;"))
+            # Backfill SLA deadline for pre-existing rows that never got one
+            await conn.execute(text(
+                "UPDATE issues SET sla_deadline = created_at + (COALESCE(sla_hours, 24) * INTERVAL '1 hour') "
+                "WHERE sla_deadline IS NULL;"
+            ))
+    print(f"[Database] Tables & columns verified ({'SQLite' if IS_SQLITE else 'PostgreSQL'}).")
 
     yield
     print("[Shutdown] Closing server...")
@@ -47,17 +60,21 @@ app = FastAPI(
 
 # CORS configuration for Vite frontend & Vercel
 cors_env = os.getenv("CORS_ORIGINS", "")
-allowed_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] if cors_env else [
+default_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+allowed_origins = [origin.strip() for origin in cors_env.split(",") if origin.strip()] if cors_env else default_origins
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if allowed_origins else ["*"],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    # Vercel deploys + any localhost/127.0.0.1 dev port (Vite auto-increments the port)
+    allow_origin_regex=r"(https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1):\d+)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

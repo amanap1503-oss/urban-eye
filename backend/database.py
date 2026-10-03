@@ -7,18 +7,40 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://postgres:aryan%408291@localhost:5432/urban_eye"
-)
+def _resolve_database_url() -> str:
+    """
+    Resolve the active database URL.
 
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    Priority:
+      1. DATABASE_URL env var (PostgreSQL/Neon when reachable, or an explicit sqlite path)
+      2. Local SQLite file, so reports always persist even when the Postgres
+         host is unreachable (e.g. outbound port 5432 blocked on this machine/network).
+    """
+    raw = (os.getenv("DATABASE_URL") or "").strip()
+
+    if raw:
+        if raw.startswith("postgresql://"):
+            raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Normalize bare sqlite URLs to the async aiosqlite driver
+        if raw.startswith("sqlite:///") and not raw.startswith("sqlite+aiosqlite:///"):
+            raw = raw.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+        return raw
+
+    sqlite_path = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "urban_eye.db"))
+    return f"sqlite+aiosqlite:///{sqlite_path}"
+
+
+DATABASE_URL = _resolve_database_url()
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 async def init_postgres_db():
     """
     Connects to default 'postgres' database and creates 'urban_eye' database if missing.
     """
+    if IS_SQLITE:
+        print("[Database] Using local SQLite file. No PostgreSQL init needed.")
+        return
+
     if "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
         print("[PostgreSQL Init] Skipping auto-create for remote database.")
         return
@@ -45,7 +67,24 @@ async def init_postgres_db():
     except Exception as e:
         print(f"[PostgreSQL Init Info] {e}")
 
-engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+if IS_SQLITE:
+    # SQLite + aiosqlite runs on a single-threaded driver; disable pooling so
+    # concurrent async requests share one connection safely.
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=None,
+    )
+else:
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+        pool_pre_ping=True,
+        connect_args={"timeout": 30},
+    )
 
 AsyncSessionLocal = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False

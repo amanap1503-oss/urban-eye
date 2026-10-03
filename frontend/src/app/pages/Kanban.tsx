@@ -22,16 +22,20 @@ const IssueCard = forwardRef<HTMLDivElement, { issue: Issue; index: number }>(
   const { upvoteIssue, approveResolution, user } = useApp();
   const [voted, setVoted] = useState(false);
 
-  // Drag-and-drop is disabled for all users (including Admins & Employees).
-  // Status changes only happen via the defined workflow actions (Assign Team -> Site Visit Proof -> Resolution Proof -> Citizen Approval).
-  const isOwner = false;
+  // Municipal officers/admins can move any card; a citizen can move their own report.
+  const isAdmin = user?.role === "official" || user?.role === "ward";
+  const isOwner =
+    isAdmin ||
+    !user ||
+    (!!issue.reportedBy && issue.reportedBy === user.uid) ||
+    (!!issue.reportedBy && issue.reportedBy === user.name);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ITEM_TYPE,
     item: { id: issue.id },
-    canDrag: false,
+    canDrag: isOwner,
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
-  }), [issue.id]);
+  }), [issue.id, isOwner]);
 
   function handleVote(e: React.MouseEvent) {
     e.stopPropagation();
@@ -42,7 +46,13 @@ const IssueCard = forwardRef<HTMLDivElement, { issue: Issue; index: number }>(
 
   return (
     <motion.div
-      ref={ref}
+      ref={(node) => {
+        // Compose the react-dnd connector ref with the forwarded ref so the card
+        // is actually registered as a drag source (and still works in a DnD wrapper).
+        drag(node);
+        if (typeof ref === "function") ref(node);
+        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: isDragging ? 0.4 : 1, y: 0, scale: isDragging ? 1.02 : 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -57,7 +67,7 @@ const IssueCard = forwardRef<HTMLDivElement, { issue: Issue; index: number }>(
           : "border-white/8 hover:border-white/15"
       }`}
       style={{ boxShadow: isDragging ? "0 12px 40px rgba(59,130,246,0.25)" : undefined }}
-      title={!isOwner ? "Only the creator of this report or municipal officers can move this issue" : undefined}
+      title={!isOwner ? "Sign in, or sign in as a municipal officer, to move this issue" : undefined}
     >
       {/* Category & Priority */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -272,7 +282,7 @@ export default function Kanban() {
           >
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Issue Board</h1>
-              <p className="text-slate-400 text-sm mt-1">Drag your own cards to update their status</p>
+              <p className="text-slate-400 text-sm mt-1">Drag a card into another column to update its status</p>
             </div>
           </motion.div>
 

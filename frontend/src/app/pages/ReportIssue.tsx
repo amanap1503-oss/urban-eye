@@ -344,10 +344,26 @@ export default function ReportIssue() {
   }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  // Tracking ID shown on the confirmation screen, regenerated on each submit.
+  const [trackingId, setTrackingId] = useState("");
+
+  /** Reset the whole wizard back to a blank first step for a new report. */
+  function resetForm() {
+    setSubmitted(false);
+    setStep(1);
+    setForm({ title: "", description: "", category: "", priority: "medium", location: "", lat: 0, lng: 0, image: "" });
+    setUploadedImage("");
+    setSelectedFile(null);
+    setVoiceAudio(null);
+    setSubmitError("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
 
   async function handleSubmit() {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError("");
     try {
       const newIssue: Omit<Issue, "id"> = {
         title: form.title, description: form.description,
@@ -361,7 +377,17 @@ export default function ReportIssue() {
         tags: [form.category as string, form.priority],
       };
       await addIssue(newIssue, selectedFile);
+      setTrackingId(Date.now().toString().slice(-6));
       setSubmitted(true);
+    } catch (err) {
+      // addIssue rolls back and re-throws on backend failure. Surface the
+      // problem instead of failing silently, so the user knows to retry.
+      console.error("Report submission failed:", err);
+      setSubmitError(
+        err instanceof Error && err.message
+          ? `Couldn't submit your report (${err.message}). Please try again.`
+          : "Couldn't submit your report. Please check your connection and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -371,7 +397,7 @@ export default function ReportIssue() {
     return (
       <div className="min-h-screen bg-[#050816] flex items-center justify-center pt-16">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", bounce: 0.4 }}
-          className="text-center max-w-md px-4">
+          className="text-center max-w-md px-4 w-full">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", bounce: 0.6 }}
             className="w-24 h-24 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6"
             style={{ boxShadow: "0 0 48px rgba(16,185,129,0.3)" }}>
@@ -379,19 +405,45 @@ export default function ReportIssue() {
           </motion.div>
           <h2 className="text-3xl font-bold text-white mb-3">Issue Reported!</h2>
 
-          <p className="text-slate-400 mb-2 text-sm">Your report with GPS coordinates has been submitted.</p>
-          <p className="text-sm text-slate-300 mb-2">
-            📍 <span className="font-mono text-xs text-slate-400">{form.lat.toFixed(5)}, {form.lng.toFixed(5)}</span>
+          <p className="text-slate-400 mb-4 text-sm">Your report with GPS coordinates has been submitted successfully.</p>
+
+          {/* Submission summary */}
+          <div className="text-left rounded-2xl border border-white/10 bg-white/[0.03] p-4 mb-6 space-y-3">
+            {form.title && (
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">Report</p>
+                <p className="text-sm text-white font-medium leading-snug">{form.title}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-slate-300">
+              <MapPin size={14} className="text-blue-400 flex-shrink-0" />
+              <span className="text-xs">{form.location || "Location captured"}</span>
+            </div>
+            {form.lat !== 0 && (
+              <p className="text-[10px] font-mono text-slate-500">GPS: {form.lat.toFixed(5)}, {form.lng.toFixed(5)}</p>
+            )}
+            <div className="flex items-center justify-between border-t border-white/8 pt-3">
+              <span className="text-[10px] uppercase tracking-wide text-slate-500">Tracking ID</span>
+              <span className="font-mono text-xs text-emerald-300">#URB{trackingId}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500 mb-6">
+            We'll keep you updated as your report is reviewed and assigned.
           </p>
-          <p className="text-xs text-slate-500 mb-8">Tracking ID: #{`URB${Date.now().toString().slice(-6)}`}</p>
-          <div className="flex gap-3 justify-center">
-            <button onClick={() => { setSubmitted(false); setStep(1); setForm({ title: "", description: "", category: "", priority: "medium", location: "", lat: 0, lng: 0, image: "" }); setUploadedImage(""); }}
+
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button onClick={resetForm}
               className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/8 text-white text-sm font-medium hover:bg-white/12 transition-all">
               Report Another
             </button>
             <button onClick={() => navigate("/map")}
               className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-[0_0_16px_rgba(59,130,246,0.4)]">
               View on Map
+            </button>
+            <button onClick={() => navigate("/dashboard")}
+              className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/8 text-white text-sm font-medium hover:bg-white/12 transition-all">
+              Go to Dashboard
             </button>
           </div>
         </motion.div>
@@ -573,9 +625,20 @@ export default function ReportIssue() {
                 disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-sm transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                <Send size={15} />
+                {isSubmitting ? (
+                  <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
                 {isSubmitting ? t("btn_submitting") : "Submit Report"}
               </button>
+
+              {submitError && (
+                <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300">
+                  <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                  <span className="leading-relaxed">{submitError}</span>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

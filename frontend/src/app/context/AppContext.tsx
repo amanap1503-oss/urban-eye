@@ -9,7 +9,7 @@ import { Issue, ISSUES, INITIAL_CITY_ROSTERS } from "../data/mockData";
 import { CityRosterOfficer } from "../lib/aiAnalyzerService";
 import { apiClient, API_BASE } from "../lib/apiClient";
 import { realtimeWS } from "../lib/wsClient";
-import { LanguageCode, getTranslation } from "../lib/i18n";
+import { LanguageCode, getTranslation, startLanguageObserver } from "../lib/i18n";
 
 type ThemeName = "default" | "blue-steel";
 
@@ -88,6 +88,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string) => getTranslation(language, key);
+
+  // Global language switching: translate every rendered page (now and on any
+  // future DOM change) without rewriting the individual page components.
+  // Also runs on mount, so the persisted language is restored after refresh.
+  useEffect(() => {
+    startLanguageObserver(language);
+  }, [language]);
+
   // User-specific notification key in localStorage
   const notifStorageKey = user?.uid ? `urbanEyeNotifications_${user.uid}` : "urbanEyeNotifications_guest";
 
@@ -658,8 +666,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (created && created.id) {
         // Mark the real backend ID so the WebSocket echo is ignored
         pendingTempIds.current.add(created.id);
-        // Replace temp local copy with backend response
-        setIssues(prev => prev.map(i => i.id === tempId ? created : i));
+        // Replace temp local copy with the backend response, but normalise it
+        // first. The backend returns its own field names and status strings
+        // (e.g. status "Reported", imageUrl, reporterId), so storing the raw
+        // response would leave the issue in a shape that the rest of the UI
+        // cannot match — it would vanish from status-filtered feeds, the
+        // tracker's step logic and the profile "My Reported Issues" list until
+        // the next full reload (which goes through normalizeIssue).
+        setIssues(prev => prev.map(i => i.id === tempId ? normalizeIssue(created) : i));
         // Clean up after a short delay (WS echo arrives within ms)
         setTimeout(() => {
           pendingTempIds.current.delete(created.id);

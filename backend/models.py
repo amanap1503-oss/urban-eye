@@ -42,7 +42,11 @@ class DBIssue(Base):
     flagged_reason = Column(String, nullable=True)
     assigned_team = Column(String, nullable=True)
     assigned_officers = Column(JSON, default=list) # List of officer names
+    assigned_at = Column(DateTime, nullable=True)
     sla_hours = Column(Integer, default=24)
+    priority_level = Column(String, nullable=True) # AI priority level: critical, high, medium, low
+    sla_deadline = Column(DateTime, nullable=True) # created_at + sla_hours
+    escalated = Column(Boolean, default=False)     # SLA breached / escalated to senior desk
     
     # Real-time AI analysis fields from Gemini Vision
     ai_score = Column(Integer, default=50)

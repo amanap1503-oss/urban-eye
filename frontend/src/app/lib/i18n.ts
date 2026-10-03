@@ -1,3 +1,5 @@
+import { AUTO_TRANSLATIONS } from "./autoTranslations";
+
 export type LanguageCode = "en" | "hi" | "mr" | "bn" | "ta" | "te" | "gu" | "kn" | "ml" | "pa";
 
 export interface LanguageOption {
@@ -729,5 +731,256 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
 
 export function getTranslation(lang: LanguageCode, key: string): string {
   const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
-  return langDict[key] || TRANSLATIONS.en[key] || key;
+  const enValue = TRANSLATIONS.en[key];
+
+  // 1) Curated translation for this key + language.
+  if (langDict[key]) return langDict[key];
+
+  // 2) Fall back to the generated dictionary using the English value.
+  if (enValue) {
+    const auto = AUTO_TRANSLATIONS[lang]?.[enValue];
+    return auto || enValue;
+  }
+
+  // 3) Key itself doubles as an English string in the generated dictionary.
+  return AUTO_TRANSLATIONS[lang]?.[key] || key;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global runtime translation
+//
+// The curated dictionaries above cover the hand-authored keys used through
+// `t()`. The generated AUTO_TRANSLATIONS dictionary additionally contains every
+// static UI string present in the application source (labels, buttons, forms,
+// modals, empty states, validation messages, ...).
+//
+// `translateText` is a pure, synchronous lookup used by the runtime applier so
+// that the selected language reaches the WHOLE application without rewriting
+// any page. User content, API data, database values and YOLO/Gemini results are
+// never passed through here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function translateText(lang: LanguageCode, text: string): string {
+  if (!text || lang === "en") return text;
+
+  const dict = AUTO_TRANSLATIONS[lang];
+  if (!dict) return text;
+
+  // Exact match — covers the large majority of static UI strings.
+  if (dict[text]) return dict[text];
+
+  // Trimmed match (text nodes often carry surrounding whitespace).
+  const trimmed = text.trim();
+  if (trimmed && trimmed !== text && dict[trimmed]) {
+    return text.replace(trimmed, dict[trimmed]);
+  }
+
+  return text;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Theme switch labels (Dark / Light)
+//
+// Kept here (instead of the generated dictionary) because the theme toggle is
+// the only place these two strings are used and they must always be available.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const THEME_LABELS: Record<LanguageCode, { light: string; dark: string }> = {
+  en: { light: "Light Mode", dark: "Dark Mode" },
+  hi: { light: "लाइट मोड", dark: "डार्क मोड" },
+  mr: { light: "लाइट मोड", dark: "डार्क मोड" },
+  bn: { light: "লাইট মোড", dark: "ডার্ক মোড" },
+  ta: { light: "லைட் பயன்முறை", dark: "டார்க் பயன்முறை" },
+  te: { light: "లైట్ మోడ్", dark: "డార్క్ మోడ్" },
+  gu: { light: "લાઇટ મોડ", dark: "ડાર્ક મોડ" },
+  kn: { light: "ಲೈಟ್ ಮೋಡ್", dark: "ಡಾರ್ಕ್ ಮೋಡ್" },
+  ml: { light: "ലൈറ്റ് മോഡ്", dark: "ഡാർക്ക് മോഡ്" },
+  pa: { light: "ਲਾਈਟ ਮੋਡ", dark: "ਡਾਰਕ ਮੋਡ" },
+};
+
+export function getThemeLabel(lang: LanguageCode, mode: "light" | "dark"): string {
+  return (THEME_LABELS[lang] || THEME_LABELS.en)[mode];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Runtime DOM applier — makes the selected language reach EVERY page
+//
+// The application renders its static copy directly in JSX (hundreds of strings
+// across 10 pages). Instead of rewriting every page, this applier walks the
+// rendered DOM and swaps the static English strings for their translation.
+//
+// Safety rules:
+//   * Only strings that exist in the generated dictionary are replaced, so
+//     user input, API/DB values, YOLO/Gemini output and numbers are untouched.
+//   * <script>/<style>/<code>/<pre>/<textarea>/SVG and contenteditable nodes are
+//     skipped, as is anything inside [data-i18n-skip].
+//   * Each node remembers the English it was created with, so switching
+//     language back and forth is always reversible.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label", "alt"] as const;
+
+const SKIP_TAGS = new Set([
+  "SCRIPT", "STYLE", "NOSCRIPT", "CODE", "PRE", "KBD", "SAMP",
+  "TEXTAREA", "SVG", "CANVAS", "MATH", "IFRAME",
+]);
+
+interface TextRecord {
+  en: string;
+  lang: LanguageCode;
+}
+
+let activeLanguage: LanguageCode = "en";
+let domObserver: MutationObserver | null = null;
+
+const textRecords = new WeakMap<Text, TextRecord>();
+const attrRecords = new WeakMap<Element, Map<string, TextRecord>>();
+
+function isSkippedElement(el: Element | null): boolean {
+  let node: Element | null = el;
+  while (node) {
+    if (SKIP_TAGS.has(node.tagName)) return true;
+    if ((node as HTMLElement).isContentEditable) return true;
+    if (node.hasAttribute("data-i18n-skip")) return true;
+    node = node.parentElement;
+  }
+  return false;
+}
+
+function applyToTextNode(node: Text): void {
+  const current = node.data;
+  if (!current || !current.trim()) return;
+
+  const lang = activeLanguage;
+  let rec = textRecords.get(node);
+
+  if (!rec) {
+    rec = { en: current, lang };
+    textRecords.set(node, rec);
+  } else if (current !== translateText(rec.lang, rec.en)) {
+    // The DOM changed underneath us (React re-render) — adopt the new source,
+    // unless it is simply our own translation for the active language.
+    if (current !== translateText(lang, rec.en)) {
+      rec.en = current;
+    }
+  }
+
+  rec.lang = lang;
+  const out = translateText(lang, rec.en);
+  if (node.data !== out) node.data = out;
+}
+
+function applyToElement(el: Element): void {
+  const lang = activeLanguage;
+  let map = attrRecords.get(el);
+  if (!map) {
+    map = new Map<string, TextRecord>();
+    attrRecords.set(el, map);
+  }
+
+  for (const attr of TRANSLATABLE_ATTRS) {
+    if (!el.hasAttribute(attr)) continue;
+    const current = el.getAttribute(attr) || "";
+    if (!current.trim()) continue;
+
+    let rec = map.get(attr);
+    if (!rec) {
+      rec = { en: current, lang };
+      map.set(attr, rec);
+    } else if (current !== translateText(rec.lang, rec.en)) {
+      if (current !== translateText(lang, rec.en)) {
+        rec.en = current;
+      }
+    }
+
+    rec.lang = lang;
+    const out = translateText(lang, rec.en);
+    if (out !== current) el.setAttribute(attr, out);
+  }
+}
+
+function walkAndApply(root: Node): void {
+  if (root.nodeType === Node.TEXT_NODE) {
+    applyToTextNode(root as Text);
+    return;
+  }
+  if (root.nodeType !== Node.ELEMENT_NODE) return;
+
+  const rootEl = root as Element;
+  if (isSkippedElement(rootEl)) return;
+  applyToElement(rootEl);
+
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+    acceptNode(node) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        if (
+          SKIP_TAGS.has(el.tagName) ||
+          (el as HTMLElement).isContentEditable ||
+          el.hasAttribute("data-i18n-skip")
+        ) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  let node = walker.nextNode();
+  while (node) {
+    if (node.nodeType === Node.TEXT_NODE) applyToTextNode(node as Text);
+    else applyToElement(node as Element);
+    node = walker.nextNode();
+  }
+}
+
+/** Translate the whole document into `lang`. Safe to call repeatedly. */
+export function applyLanguage(lang: LanguageCode): void {
+  if (typeof document === "undefined") return;
+  activeLanguage = lang;
+  document.documentElement.lang = lang;
+  if (document.body) walkAndApply(document.body);
+}
+
+/**
+ * Apply `lang` now and keep the document translated while React keeps
+ * rendering (navigation, modals, async data, toasts, ...).
+ */
+export function startLanguageObserver(lang: LanguageCode): void {
+  if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+
+  applyLanguage(lang);
+  if (domObserver) return;
+
+  domObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type === "characterData") {
+        const target = mutation.target as Text;
+        if (!isSkippedElement(target.parentElement)) applyToTextNode(target);
+      } else if (mutation.type === "attributes") {
+        const target = mutation.target as Element;
+        if (!isSkippedElement(target)) applyToElement(target);
+      } else {
+        mutation.addedNodes.forEach((added) => walkAndApply(added));
+      }
+    }
+  });
+
+  domObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: [...TRANSLATABLE_ATTRS],
+  });
+}
+
+/** Stops observing (used for cleanup / tests). */
+export function stopLanguageObserver(): void {
+  if (domObserver) {
+    domObserver.disconnect();
+    domObserver = null;
+  }
+}
+

@@ -5,7 +5,7 @@ import httpx
 import cloudinary
 import cloudinary.uploader
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -26,6 +26,68 @@ cloudinary.config(
     api_key=os.getenv("CLOUDINARY_API_KEY", ""),
     api_secret=os.getenv("CLOUDINARY_API_SECRET", "")
 )
+
+# Only attempt Cloudinary when fully configured; otherwise go straight to local disk
+CLOUDINARY_ENABLED = bool(
+    os.getenv("CLOUDINARY_CLOUD_NAME")
+    and os.getenv("CLOUDINARY_API_KEY")
+    and os.getenv("CLOUDINARY_API_SECRET")
+)
+
+
+def _save_locally(file_bytes: bytes, original_filename: Optional[str], is_annotated: bool = False) -> str:
+    """Persist an uploaded image to the local uploads/ folder and return its public path."""
+    if is_annotated:
+        filename = f"ann_{uuid.uuid4().hex}.jpg"
+    else:
+        ext = original_filename.split(".")[-1] if original_filename and "." in original_filename else "jpg"
+        filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(file_bytes)
+    return f"/uploads/{filename}"
+
+
+def _persist_image(file_bytes: bytes, original_filename: Optional[str]) -> str:
+    """
+    Upload to Cloudinary when available, otherwise persist to local disk.
+    Never raises — a report must always be savable even with no network egress.
+    """
+    if CLOUDINARY_ENABLED:
+        try:
+            print("[Cloudinary] Uploading image to Cloudinary...")
+            upload_result = cloudinary.uploader.upload(file_bytes)
+            url = upload_result.get("secure_url")
+            if url:
+                print(f"[Cloudinary] Upload success! URL: {url}")
+                return url
+            print("[Cloudinary] Upload returned no URL. Falling back to local upload.")
+        except Exception as e:
+            print(f"[Cloudinary Error] Upload failed: {e}. Falling back to local upload.")
+    return _save_locally(file_bytes, original_filename)
+
+# Statuses that stop the SLA clock (issue is effectively closed/awaiting sign-off)
+_SLA_CLOSED_STATUSES = {"Resolved", "resolved", "Pending Approval", "pending_approval", "Rejected", "rejected"}
+
+
+def _sla_meta(issue: DBIssue) -> dict:
+    """Derive SLA / escalation fields consumed by the frontend SLA Monitor."""
+    deadline = issue.sla_deadline
+    if deadline is None and issue.created_at is not None:
+        deadline = issue.created_at + timedelta(hours=issue.sla_hours or 24)
+
+    breached = bool(
+        deadline is not None
+        and deadline < datetime.utcnow()
+        and (issue.status or "") not in _SLA_CLOSED_STATUSES
+    )
+
+    return {
+        "priorityLevel": issue.priority_level or issue.priority or "medium",
+        "slaDeadline": deadline.isoformat() if deadline else None,
+        "escalated": bool(issue.escalated or breached),
+        "assignedAt": issue.assigned_at.isoformat() if issue.assigned_at else None,
+    }
 
 @router.get("")
 async def get_all_issues(city: Optional[str] = None, db: AsyncSession = Depends(get_db)):
@@ -70,7 +132,8 @@ async def get_all_issues(city: Optional[str] = None, db: AsyncSession = Depends(
             "resolutionProof": i.resolution_proof,
             "voiceRecordingUrl": i.voice_recording_url,
             "createdAt": i.created_at.isoformat() if i.created_at else datetime.utcnow().isoformat(),
-            "reportedAt": i.created_at.isoformat() if i.created_at else datetime.utcnow().isoformat()
+            "reportedAt": i.created_at.isoformat() if i.created_at else datetime.utcnow().isoformat(),
+            **_sla_meta(i),
         })
     return output
 
@@ -148,19 +211,7 @@ async def create_issue(
 
     if image:
         image_bytes = await image.read()
-        try:
-            print("[Cloudinary] Uploading image to Cloudinary...")
-            upload_result = cloudinary.uploader.upload(image_bytes)
-            image_url = upload_result.get("secure_url")
-            print(f"[Cloudinary] Upload success! URL: {image_url}")
-        except Exception as e:
-            print(f"[Cloudinary Error] Upload failed: {e}. Falling back to local upload.")
-            ext = image.filename.split(".")[-1] if "." in image.filename else "jpg"
-            filename = f"{uuid.uuid4().hex}.{ext}"
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            with open(filepath, "wb") as f:
-                f.write(image_bytes)
-            image_url = f"/uploads/{filename}"
+        image_url = _persist_image(image_bytes, image.filename)
 
     # Analyze with Gemini Vision AI
     ai_result = await analyze_issue_with_ai(image_bytes, description, category, location)
@@ -168,26 +219,27 @@ async def create_issue(
     ai_annotated_image_url = None
     annotated_bytes = ai_result.get("annotated_image_bytes")
     if annotated_bytes:
-        try:
-            print("[Cloudinary] Uploading annotated YOLO image...")
-            upload_result = cloudinary.uploader.upload(annotated_bytes)
-            ai_annotated_image_url = upload_result.get("secure_url")
-            print(f"[Cloudinary] Annotated image success! URL: {ai_annotated_image_url}")
-        except Exception as e:
-            print(f"[Cloudinary Error] Annotated upload failed: {e}. Falling back to local.")
-            filename = f"ann_{uuid.uuid4().hex}.jpg"
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            with open(filepath, "wb") as f:
-                f.write(annotated_bytes)
-            ai_annotated_image_url = f"/uploads/{filename}"
+        if CLOUDINARY_ENABLED:
+            try:
+                print("[Cloudinary] Uploading annotated YOLO image...")
+                upload_result = cloudinary.uploader.upload(annotated_bytes)
+                ai_annotated_image_url = upload_result.get("secure_url")
+                print(f"[Cloudinary] Annotated image success! URL: {ai_annotated_image_url}")
+            except Exception as e:
+                print(f"[Cloudinary Error] Annotated upload failed: {e}. Falling back to local.")
+        if not ai_annotated_image_url:
+            ai_annotated_image_url = _save_locally(annotated_bytes, None, is_annotated=True)
 
     issue_id = f"iss-{uuid.uuid4().hex[:8]}"
+    suggested_sla = ai_result.get("suggested_sla_hours", 24)
+    ai_priority = ai_result.get("priority", "medium")
     new_issue = DBIssue(
         id=issue_id,
         title=title,
         description=description,
         category=ai_result.get("suggested_category", category),
-        priority=ai_result.get("priority", "medium"),
+        priority=ai_priority,
+        priority_level=ai_priority,
         status="Reported",
         location=location,
         lat=lat,
@@ -200,7 +252,9 @@ async def create_issue(
         votes=1,
         upvoted_by=[reporter_id] if reporter_id else [],
         flagged_fake=False,
-        sla_hours=ai_result.get("suggested_sla_hours", 24),
+        sla_hours=suggested_sla,
+        sla_deadline=datetime.utcnow() + timedelta(hours=suggested_sla or 24),
+        escalated=False,
         ai_score=ai_result.get("ai_score", 65),
         ai_summary=ai_result.get("summary", ""),
         ai_risk_assessment=ai_result.get("risk_assessment", ""),
@@ -272,7 +326,8 @@ async def create_issue(
         "recommendedAction": new_issue.recommended_action,
         "yoloDetections": new_issue.yolo_detections or [],
         "voiceRecordingUrl": new_issue.voice_recording_url,
-        "createdAt": new_issue.created_at.isoformat()
+        "createdAt": new_issue.created_at.isoformat(),
+        **_sla_meta(new_issue),
     }
 
     # Broadcast real-time issue creation via WebSocket
@@ -379,8 +434,12 @@ async def assign_team(issue_id: str, payload: IssueAssignTeamSchema, db: AsyncSe
 
     issue.assigned_team = payload.team_name
     issue.assigned_officers = payload.officer_names
+    issue.assigned_at = datetime.utcnow()
     if payload.sla_hours:
         issue.sla_hours = payload.sla_hours
+    # Re-anchor the SLA deadline to the moment of assignment
+    issue.sla_deadline = datetime.utcnow() + timedelta(hours=issue.sla_hours or 24)
+    issue.escalated = False
 
     # Send direct real-time notification to reporting citizen
     notif = DBNotification(
@@ -402,6 +461,8 @@ async def assign_team(issue_id: str, payload: IssueAssignTeamSchema, db: AsyncSe
         "teamName": payload.team_name,
         "officerNames": payload.officer_names,
         "slaHours": issue.sla_hours,
+        "assignedAt": issue.assigned_at.isoformat(),
+        "slaDeadline": issue.sla_deadline.isoformat() if issue.sla_deadline else None,
         "notification": {
             "id": notif.id,
             "type": notif.type,
@@ -414,7 +475,13 @@ async def assign_team(issue_id: str, payload: IssueAssignTeamSchema, db: AsyncSe
         }
     })
 
-    return {"success": True, "assignedTeam": payload.team_name, "assignedOfficers": payload.officer_names}
+    return {
+        "success": True,
+        "assignedTeam": payload.team_name,
+        "assignedOfficers": payload.officer_names,
+        "slaHours": issue.sla_hours,
+        **_sla_meta(issue),
+    }
 
 @router.post("/{issue_id}/flag-fake")
 async def flag_fake_issue(issue_id: str, payload: IssueFlagSchema, db: AsyncSession = Depends(get_db)):
@@ -529,18 +596,16 @@ async def get_ai_report(issue_id: str, db: AsyncSession = Depends(get_db)):
     ai_annotated_image_url = None
     annotated_bytes = analysis.get("annotated_image_bytes")
     if annotated_bytes:
-        try:
-            print("[Cloudinary] Uploading annotated YOLO image for legacy issue...")
-            upload_result = cloudinary.uploader.upload(annotated_bytes)
-            ai_annotated_image_url = upload_result.get("secure_url")
-            print(f"[Cloudinary] Legacy annotated image success! URL: {ai_annotated_image_url}")
-        except Exception as e:
-            print(f"[Cloudinary Error] Legacy annotated upload failed: {e}. Falling back to local.")
-            filename = f"ann_{uuid.uuid4().hex}.jpg"
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            with open(filepath, "wb") as f:
-                f.write(annotated_bytes)
-            ai_annotated_image_url = f"/uploads/{filename}"
+        if CLOUDINARY_ENABLED:
+            try:
+                print("[Cloudinary] Uploading annotated YOLO image for legacy issue...")
+                upload_result = cloudinary.uploader.upload(annotated_bytes)
+                ai_annotated_image_url = upload_result.get("secure_url")
+                print(f"[Cloudinary] Legacy annotated image success! URL: {ai_annotated_image_url}")
+            except Exception as e:
+                print(f"[Cloudinary Error] Legacy annotated upload failed: {e}. Falling back to local.")
+        if not ai_annotated_image_url:
+            ai_annotated_image_url = _save_locally(annotated_bytes, None, is_annotated=True)
 
     issue.ai_score = analysis.get("ai_score", issue.ai_score)
     issue.ai_summary = analysis.get("summary", issue.ai_summary)

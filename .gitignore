@@ -9,6 +9,14 @@ backend/test_gemini.py
 __pycache__/
 *.pyc
 backend/uploads/
+# Local SQLite database (runtime artifact; Postgres is used in production)
+backend/*.db
+*.db-journal
 venv/
 backend/venv/
 /*.pt
+
+# Local dev server logs & scratch scripts
+*.log
+backend/_*.py
+frontend/_*.log
